@@ -1,0 +1,549 @@
+---
+title: 'ISL: Final Project'
+author: "Yun Soo Hong"
+date: "March 15, 2018"
+output: 
+  pdf_document: default
+  latex_engine: xelatex
+fontfamily: mathpazo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 1. Do variable selection and build a prediction model for the age in months at time of examination, **RIDAGEEX**. You should explain all the steps.     
+```{r,include=F}
+library(tidyverse)
+library(dplyr)
+load("nhanes2003-2004.Rda")
+nhanes <- as.tibble(nhanes2003_2004)
+```
+
+## Data management
+```{r}
+# Recode age as a numeric variable
+nhanes$RIDAGEEX <- as.numeric(nhanes$RIDAGEEX)
+summary(nhanes$RIDAGEEX)   # 692 observations with missing outcome (age)
+
+# Keep observations where "RIDAGEEX" is not missing
+nhanes <- filter(nhanes,!is.na(RIDAGEEX))    # 9430 observations 
+summary(nhanes$RIDAGEEX)  
+```
+
+Initially, there are 10122 people with at least one of 813 variables measured in this NHANES 2003-2004 data set. Because we cannot use the information to make predictions if the outcome variable is missing, I first excluded observations with missing information on the outcome variable **RIDAGEEX**. Among 10122 people included in the data set, there were 692 missing data on **RIDAGEEX** and were removed. We end up with $9,430$ people.  
+
+## Handling missingness
+
+```{r, fig.width=6,fig.height=12}
+# Checking for missingness
+missing<-nhanes %>%
+         summarize_all(funs(sum(is.na(.)) / length(.)))
+
+data<-as.data.frame(names(nhanes)) ##keep the names of nhanes
+nhanes_m<-cbind(data,t(missing)) ## cbind the missing with names
+ 
+##rename variable names, sort, and create new dataset
+data<-nhanes_m %>%
+         rename(var='names(nhanes)',missing=`t(missing)`) %>%
+         mutate(percentage = ifelse(missing<0.10,1,0)) %>%
+         arrange(missing)
+sum(data$percentage)
+
+## missing plot:
+data$var<-factor(data$var,levels=data$var[order(data$missing)])
+ggplot(data,aes(var,missing,color=as.factor(percentage),fill=as.factor(percentage))) +
+      geom_bar(stat="identity") + 
+      coord_flip() +
+      labs(title="Percentage of missingness") +
+      xlab("variable names") + ylab("percentage of missing") + 
+      scale_colour_discrete(name="missing < 10%",labels=c("No","Yes")) +
+      scale_fill_discrete(name="missing < 10%",labels=c("No","Yes"))
+
+datax = subset(nhanes,select=as.character(filter(data,percentage==1)$var))  ## dataset missing <0.10
+```
+
+I evaluated the percentage of missing for each variable. Among the 813 variables in the original data set, I selected 126 variables that had less than 10% missing in the data, assuming that it was missing at random. The plot shows the proportion of missing per variable and the majority of variables have more than 10% missing. There were 24 variables that did not have any missing information, including variables such as **SEQN**, **RIDAGEYR**, **RIDAGEMN**, etc. There were also 11 variables with no data (complete missing), including variables such as **BAXFTC12**. Additional variables not likely to contribute to predicting age were further removed in the next step.    
+
+```{r,results='hide'}
+# Remove variables that are not likely to provide information to predicting age
+names(datax)
+nhanes_a <- subset(datax,select=-c(SEQN,BMDSTATS,PEASCST1,SDDSRVYR,RIDSTATR,
+                                   RIDEXMON,RIDRETH1,RIDRETH2,DMDBORN,DMDCITZN,
+                                   SIALANG,SIAINTRP,WTINT2YR,WTMEC2YR,SDMVPSU,SDMVSTRA,
+                                   DR1DRSTZ,DR2DRSTZ,FIALANG,HSAQUEX,FIAPROXY,FIAINTRP,
+                                   DMDHRBRN,DR1LANG,DR1BWATR,DR1CWATR,DR1_330,DR1_320,
+                                   DBQ095Z,INDFMPIR,WTDRD1,DRABF,DRQSPREP,DR1_300,DRDINT,
+                                   DR1TNUMF,DR1TATOC,DR1TATOA,DR1TRET,DR1TVARA,DR1TACAR,
+                                   (DR1TBCAR:DR1TP226)))
+nhanes_a <- filter(nhanes_a, !(MCQ053==9 | MCQ053==7 | DRQSDIET==9))
+
+nhanes_a$RIDAGEYR <- as.numeric(nhanes_a$RIDAGEYR)
+nhanes_a$RIDAGEMN <- as.numeric(nhanes_a$RIDAGEMN)
+nhanes_a$DMDHHSIZ <- as.numeric(nhanes_a$DMDHHSIZ)
+nhanes_a$DMDHRAGE <- as.numeric(nhanes_a$DMDHRAGE)
+nhanes_a$BMXWT    <- as.numeric(nhanes_a$BMXWT)
+nhanes_a$INDFMINC <- as.numeric(nhanes_a$INDFMINC)
+nhanes_a$DMDHRMAR <- as.numeric(nhanes_a$DMDHRMAR)
+nhanes_a$PEASCTM1 <- as.numeric(nhanes_a$PEASCTM1)
+nhanes_a$BMXARML  <- as.numeric(nhanes_a$BMXARML)
+nhanes_a$BMXARMC  <- as.numeric(nhanes_a$BMXARMC)
+nhanes_a$DR1EXMER <- as.numeric(nhanes_a$DR1EXMER)
+nhanes_a$DR1TKCAL <- as.numeric(nhanes_a$DR1TKCAL)
+nhanes_a$DR1TPROT <- as.numeric(nhanes_a$DR1TPROT)
+nhanes_a$DR1TCARB <- as.numeric(nhanes_a$DR1TCARB)
+nhanes_a$DR1TSUGR <- as.numeric(nhanes_a$DR1TSUGR)
+nhanes_a$DR1TFIBE <- as.numeric(nhanes_a$DR1TFIBE)
+nhanes_a$DR1TTFAT <- as.numeric(nhanes_a$DR1TTFAT)
+nhanes_a$DR1TSFAT <- as.numeric(nhanes_a$DR1TSFAT)
+nhanes_a$DR1TMFAT <- as.numeric(nhanes_a$DR1TMFAT)
+nhanes_a$DR1TPFAT <- as.numeric(nhanes_a$DR1TPFAT)
+nhanes_a$DR1TCHOL <- as.numeric(nhanes_a$DR1TCHOL)
+names(nhanes_a)
+nhanes_a <- na.omit(nhanes_a)
+sum(is.na(nhanes_a))
+```
+
+```{r, echo=F}
+p <- ggplot(data=nhanes_a, mapping=aes(x=RIDAGEEX, y=RIDAGEMN))
+p + geom_point()
+cor(nhanes_a$RIDAGEMN, nhanes_a$RIDAGEEX)
+```
+
+Among the 126 variables selected, I removed 89 variables that were unlikely to contribute to predicting age. These variables included administrative information such as **SEQN** (sequence number), **BMDSTATS** (Body Measures Component status Code), **SDDSRVYR** (Data Release Number), **RIDSTATR** (Interview and examination status of the participant), **RIDEXMON** (six month time period when the examination was performed), sample weights, etc., and dietary information, such as **DR1_300** (was the amount of food that you ate yesterday much more than usual, usual, or much less than usual), and **DR1TATOC** (Vitamin E as alpha-tocopherol), **DR1TRET** (retinol), etc. In addition, any observation with at least one missing variable was further removed from analysis. As a result, we had 6,921 observations in the final data set for predicting **RIDAGEEX** variable. As can be seen from the plot, the age of the participant at the time of screening (in months) was highly correlated with the variable we were trying to predict, **RIDAGEEX**, which is the age of the participant at the time of examination, and therefore highly predictive. The correlation between the two variables was 0.993. The final data set included 37 variables (1 outcome variable, 36 predictor variables). 
+
+## Variable selection
+```{r, cache=F}
+dim(nhanes_a)
+library(glmnet)
+library(Matrix)
+set.seed(850724)
+
+x=model.matrix(RIDAGEEX~.,nhanes_a)[,-1]
+y=nhanes_a$RIDAGEEX
+train=sample(1:nrow(x),nrow(x)/2)
+test=(-train)
+nhanes_a_train<-nhanes_a[train,]
+nhanes_a_test<-nhanes_a[test,]
+y.test=y[test]
+  
+# Linear regression, ridge regression, vs. LASSO
+## fitting linear model using least squares on a training set
+fit.lm <- lm(RIDAGEEX~., data=nhanes_a_train)
+pred.lm <- predict(fit.lm,nhanes_a_test)
+mean((pred.lm - nhanes_a_test$RIDAGEEX)^2)  # MSE on the test set using linear regression
+
+## fitting ridge regression on a training set
+train.mat <- model.matrix(RIDAGEEX~.,data=nhanes_a_train)
+test.mat <- model.matrix(RIDAGEEX~.,data=nhanes_a_test)
+grid=10^seq(10,-2,length=100)
+fit.ridge <- glmnet(train.mat,nhanes_a_train$RIDAGEEX,alpha=0,lambda=grid,thresh=1e-12)
+cv.ridge <- cv.glmnet(train.mat,nhanes_a_train$RIDAGEEX,alpha=0,lambda=grid,thresh=1e-12)
+plot(cv.ridge)
+bestlam.ridge <- cv.ridge$lambda.min
+bestlam.ridge
+
+pred.ridge <- predict(fit.ridge,s=bestlam.ridge,newx=test.mat)
+mean((pred.ridge-nhanes_a_test$RIDAGEEX)^2)  # MSE on the test set using ridge regression
+
+predict(fit.ridge,s=bestlam.ridge,type="coefficients")
+
+## fitting LASSO model on the training set 
+fit.lasso <- glmnet(train.mat, nhanes_a_train$RIDAGEEX,alpha=1,lambda=grid,thresh=1e-12)
+cv.lasso <- cv.glmnet(train.mat, nhanes_a_train$RIDAGEEX,alpha=1,lambda=grid,thresh=1e-12)
+plot(cv.lasso)
+bestlam.lasso <- cv.lasso$lambda.min
+bestlam.lasso
+
+pred.lasso <- predict(fit.lasso, s=bestlam.lasso,newx=test.mat)
+mean((pred.lasso-nhanes_a_test$RIDAGEEX)^2)  # MSE on the test set using LASSO
+
+predict(fit.lasso,s=bestlam.lasso,type="coefficients")
+
+# Comparison of test errors using R^2
+test.avg <- mean(nhanes_a_test$RIDAGEEX)
+lm.r2 <- 1-mean((pred.lm-nhanes_a_test$RIDAGEEX)^2)/mean((test.avg-nhanes_a_test$RIDAGEEX)^2)
+ridge.r2 <- 1-mean((pred.ridge-nhanes_a_test$RIDAGEEX)^2)/mean((test.avg-nhanes_a_test$RIDAGEEX)^2)
+lasso.r2 <- 1-mean((pred.lasso-nhanes_a_test$RIDAGEEX)^2)/mean((test.avg-nhanes_a_test$RIDAGEEX)^2)
+
+lm.r2; ridge.r2; lasso.r2 
+```
+
+#### Table 1
+|       Model       |     MSE    |   R^2   | 
+|:-----------------:|:----------:|:-------:|
+| Linear Regression |  1217.935  |  0.986  |
+| Ridge  Regression |  1218.349  |  0.986  | 
+|       LASSO       |  1191.296  |  0.986  | 
+
+
+The data set was first divided into a training set and a test set of equal size. For comparison with other models, I fit a linear regression with all the predictors included in the model. The MSE on the test set using linear regression was 1217.935. 
+Then I fit a ridge regression on the training set with lambda ranging from 0.01 to 100. The lambda that provides the best MSE in the training set was 0.093, and using this, the model was fit in the test set. The resulting MSE was 1218.349, which was similar to that from linear regression. The ridge regression does not perform variable selection, so all the predictors are included in the model. The coefficients for each of the predictors is presented above. In the next step, I used LASSO for variable selection, using the same range of lambda values as the ridge regression. The lambda with the best fit was 2.009 and the coefficients of all but variables **RIDAGEMN** and **DR1HELPD3** (who helped in responding for the dietary interview) were set to 0. The MSE using LASSO was 1191.296 and was slightly better than the other 2 methods. The $R^2$ for the three methods were very high at 0.986 and very similar. This is most likely because the **RIDAGEMN** variable is highly predictive of **RIDAGEEX**. 
+For this study, dimension reduction method, such as principal component analysis, was not used because the number observations $N$, were large relative to the number of parameters, $p$.  
+
+### TREE-BASED METHODS  
+```{r, fig.width=6, fig.height=5}
+
+# Regression trees
+library(MASS)
+library(tree)
+set.seed(850724)
+train=sample(1:nrow(nhanes_a),nrow(nhanes_a)/2)
+tree.nhanes <- tree(RIDAGEEX~.,nhanes_a,subset=train)
+summary(tree.nhanes)
+plot(tree.nhanes)
+text(tree.nhanes,pretty=0)
+
+## pruning the tree -> did not change the results from before
+cv.tree.nhanes = cv.tree(tree.nhanes)
+plot(cv.tree.nhanes$size,cv.tree.nhanes$dev,type='b')
+prune.tree.nhanes = prune.tree(tree.nhanes,best=5)
+plot(prune.tree.nhanes)
+text(prune.tree.nhanes,pretty=0)
+
+## predictions on the test set
+yhat=predict(tree.nhanes,newdata=nhanes_a[train,])
+nhanes.test=nhanes_a[-train,"RIDAGEEX"]
+mean((yhat-nhanes.test)^2)
+
+# Bagging using p/3 variables
+library(randomForest)
+set.seed(850724)
+bag.nhanes=randomForest(RIDAGEEX~., data=nhanes_a, subset=train, mtry=12,importance=T)
+bag.nhanes
+
+yhat.bag=predict(bag.nhanes,newdata=nhanes_a[-train,])
+mean((yhat.bag-nhanes.test)^2)
+importance(bag.nhanes)
+varImpPlot(bag.nhanes,cex=0.7)
+
+# Boosting
+library(gbm)
+set.seed(850724)
+boost.nhanes=gbm(RIDAGEEX~.,data=nhanes_a[train,],distribution="gaussian",n.trees=5000,
+                 interaction.depth=4)
+summary(boost.nhanes)
+par(mfrow=c(1,2))
+plot(boost.nhanes,i="RIDAGEMN")
+plot(boost.nhanes,i="RIDAGEYR")
+
+## predictions on the test set
+yhat.boost=predict(boost.nhanes,newdata=nhanes_a[-train,],n.trees=5000)
+mean((yhat.boost-nhanes.test)^2)
+```
+
+Then, tree-based methods (regression tree, bagging, and boosting methods) were implemented to see if these methods can improve prediction and reduce prediction error. The regression tree used only 1 variable, "RIDAGEMN", to build the tree. The residual mean deviance of this tree with 5 terminal nodes was 4272 (MSE = 167730.8). When bagging method was used with p/3 (where p = number of parameters), 12, to be considered for each split of the tree, MSE was substantially reduced to 1023.225. As can be expected, **RIDAGEMN** and **RIDAGEYR** were the most influential variables for predicting **RIDAGEEX**. Unlike bagging, boosting does not involve bootstrap sampling and it uses information from previously grown trees. I used 5000 trees and limiting the depth of each tree (option *interaction.depth*) to 4. The MSE was 1125.254 and it was slightly higher than that using bagging method.  
+
+Overall, the bagging method using 12 parameters for each split had the lowest MSE in the test set. 
+
+## Problem 2. For participants 50 years and older, build a prediction model for the final mortality status, **mortstat**. You should explain all the steps.  
+
+## Data management
+```{r}
+load("nhanes2003-2004.Rda")
+nhanes <- as.tibble(nhanes2003_2004)
+
+# Recode mortality as a factor variable
+nhanes$mortstat <- as.factor(nhanes$mortstat)
+summary(nhanes$mortstat)   # 4512 observations with missing outcome (mortality)
+
+# Keep observations where "mortstat" is not missing
+nhanes <- filter(nhanes,!is.na(mortstat))     
+summary(nhanes$mortstat)  
+sum(is.na(nhanes$mortstat))
+
+# Keep observations for age >= 50 (RIDAGEEX >= 600)
+nhanes$RIDAGEEX <- as.numeric(nhanes$RIDAGEEX)
+nhanes <- filter(nhanes,RIDAGEEX>=600)
+summary(nhanes$RIDAGEEX)
+
+summary(nhanes$mortstat)  
+```
+
+Initially, there are 10,122 people with at least one of 813 variables measured in this NHANES 2003-2004 data set. Because we cannot use the information to make predictions if the outcome variable is missing, I first excluded observations with missing information on the outcome variable **mortstat**. Among 10,122 people included in the data set, there were 4,512 missing data on **RIDAGEEX** and were removed. After 5,610 participants remaining, there were 732 deaths during the following 9 years. Then, because we will be predicting mortality among those 50 years or older, additional 3,673 participants were removed as they were younger than 50 years old, leaving 1,937 participants in the data set. Among these people, 408 died within 9 years. 
+
+## Handling missingness
+
+```{r, fig.width=6,fig.height=12}
+library(tidyverse)
+library(dplyr)
+
+# Checking for missingness
+missing<-nhanes %>%
+         summarize_all(funs(sum(is.na(.)) / length(.)))
+
+data1<-as.data.frame(names(nhanes)) ## keep the names of nhanes
+nhanes_m<-cbind(data1,t(missing))   ## cbind the missing with names
+ 
+## rename variable names, sort, and create new dataset
+data1<-nhanes_m %>%
+         rename(var='names(nhanes)',missing=`t(missing)`) %>%
+         mutate(percentage = ifelse(missing<0.05,1,0)) %>%
+         arrange(missing)
+sum(data1$percentage)
+
+## missing plot:
+data1$var<-factor(data1$var,levels=data1$var[order(data1$missing)])
+ggplot(data1,aes(var,missing,color=as.factor(percentage),fill=as.factor(percentage))) +
+      geom_bar(stat="identity") + 
+      coord_flip() +
+      labs(title="Percentage of missingness") +
+      xlab("variable names") + ylab("percentage of missing") + 
+      scale_colour_discrete(name="missing < 5%",labels=c("No","Yes")) +
+      scale_fill_discrete(name="missing < 5%",labels=c("No","Yes"))
+
+datax2 = subset(nhanes,select=as.character(filter(data1,percentage==1)$var))  ## dataset missing <0.5
+
+```
+
+Then the percentage of missing for each variable was evaluated. Among the 813 variables in the original data set, 133 variables with less than 5% missingness were selected. The plot shows the proportion of missing per variable and the majority of variables have more than 5% missing. There were 70 variables that did not have any missing information, including variables such as **SEQN**, **RIDAGEYR**, **mortstat**, etc. There were also 647 variables with no data (complete missing). Additional variables not likely to contribute to predicting age were further removed in the next step.  
+
+```{r,include=F}
+# Remove variables that are not likely to provide information to predicting mortality
+names(datax2)
+
+nhanes_b <- subset(datax2, select=-c(SEQN,BAAEXSTS,BMDSTATS,BPQ010,BPQ060,PEASCST1,SDDSRVYR,RIDSTATR,
+                                     RIDEXMON,RIDRETH2,DMQMILIT,DMDBORN,DMDEDUC,DMDHHSIZ,DMDHRGND,
+                                     DMDHRAGE,SIALANG,SIAPROXY,SIAINTRP,WTINT2YR,WTMEC2YR,SDMVPSU,
+                                     SDMVSTRA,DR1DRSTZ,DR2DRSTZ,HSAQUEX,MCQ270,SSQ011,SSQ051,
+                                     WHQ030,WHQ040,WHQ090,FIALANG,FIAPROXY,FIAINTRP,WHQ150,
+                                     DMDHRMAR,BPQ150A,DMDHRBRN,LBXMCVSI,LBXMCHSI,LBXMC,LBXRDW,LBXMPSI,
+                                     BPQ150A,BPQ150B,BPQ150C,BPQ150D,BPXPTY,DBQ095Z,DR1MNRSP,DR1HELPD,
+                                     DRQSDIET,LBXLYPCT:LBDBANO,DR1EXMER,DR1DAY,DR1LANG,DRQSPREP,DR1_300,
+                                     DR1CWATR,DR1_320,DR1_330,DR1BWATR,PEASCTM1,DIQ050,SSQ061,
+                                     MCQ092,MCQ140,MCQ160D,MCQ160E,MCQ160M))
+
+nhanes_b <- na.omit(nhanes_b)
+sum(is.na(nhanes_b))
+
+nhanes_b <- filter(nhanes_b, !(DMDCITZN==7 | DMDEDUC2==7 | DMDEDUC2==9 | DIQ090==9 | DIQ100==9 |  
+                               DIQ120==9 | DIQ140==9 | MCQ010==9 | MCQ053==9 | 
+                               MCQ160F==9 | MCQ160J==9 | MCQ220==9 | MCQ160G==9))
+
+nhanes_b$RIDAGEYR <- as.numeric(nhanes_b$RIDAGEYR)
+nhanes_b$RIDAGEMN <- as.numeric(nhanes_b$RIDAGEMN)
+nhanes_b$WHD140   <- as.numeric(nhanes_b$WHD140)
+nhanes_b$WHD020   <- as.numeric(nhanes_b$WHD020)
+nhanes_b$WHD050   <- as.numeric(nhanes_b$WHD050)
+nhanes_b$WHD010   <- as.numeric(nhanes_b$WHD010)
+nhanes_b$WHD130   <- as.numeric(nhanes_b$WHD130)
+nhanes_b$WHD110   <- as.numeric(nhanes_b$WHD110)
+nhanes_b$WHD120   <- as.numeric(nhanes_b$WHD120)
+nhanes_b$BMXWT    <- as.numeric(nhanes_b$BMXWT)
+nhanes_b$BMXHT    <- as.numeric(nhanes_b$BMXHT)
+nhanes_b$BMXBMI   <- as.numeric(nhanes_b$BMXBMI)
+nhanes_b$LBXWBCSI <- as.numeric(nhanes_b$LBXWBCSI)
+nhanes_b$LBXRBCSI <- as.numeric(nhanes_b$LBXRBCSI)
+nhanes_b$LBXHGB   <- as.numeric(nhanes_b$LBXHGB)
+nhanes_b$LBXHCT   <- as.numeric(nhanes_b$LBXHCT)
+nhanes_b$LBXPLTSI <- as.numeric(nhanes_b$LBXPLTSI)
+nhanes_b$BPXPLS   <- as.numeric(nhanes_b$BPXPLS)
+
+summary(nhanes_b)
+
+```
+
+Among the 133 variables selected, I removed 89 variables that were unlikely to contribute to predicting mortality. These variables included administrative information such as **SEQN** (sequence number), **BMDSTATS** (Body Measures Component status Code), **SDDSRVYR** (Data Release Number), **RIDSTATR** (Interview and examination status of the participant), **RIDEXMON** (six month time period when the examination was performed), sample weights, etc., dietary information, such as **DR1_300** (was the amount of food that you ate yesterday much more than usual, usual, or much less than usual), and medical/family history, such as **MCQ270** (Did your biological mother ever fracture her hip?). In addition, some of the laboratory variables that are less meaningful than or highly correlated with other measurements, such as **LBXMCVSI** (Mean cell volume), and **LBXMC** (Mean cell hemoglobin concentration), were removed.
+As a result, we had 1,604 observations in the final data set for predicting mortality in 9 years (variable **mortstat**). The final data set included 54 variables (1 outcome variable, 53 predictor variables) and a total of 304 deaths.  
+
+## Variable selection
+```{r}
+dim(nhanes_b)
+library(glmnet)
+library(Matrix)
+set.seed(724)
+
+x=model.matrix(mortstat~.,nhanes_b)[,-1]
+y=nhanes_b$mortstat
+train=sample(1:nrow(x),nrow(x)/2)
+test=(-train)
+nhanes_b_train<-nhanes_b[train,]
+nhanes_b_test<-nhanes_b[test,]
+
+# Logistic regression using all predictors
+fit.log <- glm(as.factor(mortstat)~.,data=nhanes_b,family=binomial,subset=train)
+summary(fit.log)
+test.mort <- nhanes_b_test$mortstat
+
+## confusion matrix
+fit.log.prob=predict(fit.log,nhanes_b_test,type="response")
+fit.log.pred = rep(0,length(fit.log.prob))
+fit.log.pred[fit.log.prob>0.5]=1
+table(fit.log.pred, test.mort)
+mean(fit.log.pred==test.mort)
+
+## logistic regression using coefficients with most statistical significance from above
+fit.log2 <- glm(mortstat~
+                  as.factor(RIAGENDR)+as.factor(MCQ160G)+as.factor(MCQ250C)+as.factor(DMDMARTL),
+                data=nhanes_b,family=binomial,subset=train)
+summary(fit.log2)
+fit.log.prob2=predict(fit.log2,nhanes_b_test,type="response")
+fit.log.pred2 = rep(0,length(fit.log.prob2))
+fit.log.pred2[fit.log.prob2 > 0.5]=1
+table(fit.log.pred2, test.mort)
+mean(fit.log.pred2==test.mort)
+
+# Linear discriminant analysis using most significant predictors from logistic regression
+library(MASS)
+lda.fit=lda(mortstat~as.factor(RIAGENDR)+as.factor(MCQ250C)+as.factor(DMDMARTL),
+            data=nhanes_b,subset=train)
+lda.fit
+
+lda.prob=predict(lda.fit,nhanes_b_test,type="response")
+table(lda.prob$class,test.mort)
+mean(lda.prob$class==test.mort)
+
+# Quadratic discriminant analysis using most significant predictors from logistic regression 
+qda.fit=qda(mortstat~as.factor(RIAGENDR)+as.factor(MCQ250C)+as.factor(DMDMARTL),
+            data=nhanes_b,subset=train)
+qda.fit
+
+qda.prob=predict(qda.fit,nhanes_b_test,type="response")
+table(qda.prob$class,test.mort)
+mean(qda.prob$class==test.mort)
+
+```
+
+The data set was first divided into a training set and a test set of equal size. For comparison with other models, I fit a logistic regression with all the predictors included in the model. The test error using all the variables was 0.0985. In the second model, variables that had $p < 0.01$ in the full model were included. The variables were **RIAGENDR** (gender of the participant), **MCQ160G** (physician diagnosed emphysema), **MCQ250C** (blood relatives with asthma),and **DMDMARTL** (marital status). The test error for this model was higher at 0.2208. Then linear discriminant analysis using the 3 of the 4 variables yielded test error of 0.1995. Using quadratic discriminant analysis did not improve the test error (test error = 0.2469). However, of the 4 models, logistic regression model with all the variables performed the best in predicting mortality (46/157=0.29).
+
+#### Table 2
+|                 Model              |   Test Error   | True  positive | True  negative |
+|:----------------------------------:|:--------------:|:--------------:|:--------------:|
+| Logistic Regression (all variables)|     0.0985     |     0.2930     |     0.9271     |
+| Logistic Regression (selected)     |     0.2208     |     0.0701     |     0.9767     |
+| Linear discriminant analysis       |     0.1995     |       0        |     0.9953     | 
+| Quadratic discriminant analysis    |     0.2469     |     0.0637     |     0.9209     |
+
+## TREE-BASED MODELS
+```{r}
+# Tree-based methods 
+set.seed(2)
+train=sample(1:nrow(nhanes_b),nrow(nhanes_b)/2)
+nhanes_b_test=nhanes_b[-train,]
+test.mort <- nhanes_b_test$mortstat
+
+tree.nhanes=tree(mortstat~.,nhanes_b,subset=train)
+summary(tree.nhanes)
+plot(tree.nhanes)
+text(tree.nhanes,cex=0.75,pretty=0)
+tree.nhanes
+
+## predictions on the test set
+tree.predict=predict(tree.nhanes,nhanes_b_test,type="class")
+table(tree.predict,test.mort)
+
+## pruning the tree
+set.seed(850724)
+cv.tree.nhanes = cv.tree(tree.nhanes,FUN=prune.misclass)
+names(cv.tree.nhanes)
+cv.tree.nhanes
+
+par(mfrow=c(1,2))
+plot(cv.tree.nhanes$size,cv.tree.nhanes$dev,type='b')
+plot(cv.tree.nhanes$k,cv.tree.nhanes$dev,type='b')
+
+prune.tree.nhanes = prune.misclass(tree.nhanes,best=5)
+plot(prune.tree.nhanes)
+text(prune.tree.nhanes,pretty=0)
+
+## predictions on the test set
+tree.predict=predict(prune.tree.nhanes,nhanes_b_test,type="class")
+table(tree.predict,test.mort)
+
+# Bagging using all variables 
+library(randomForest)
+set.seed(850724)
+bag.nhanes=randomForest(mortstat~., data=nhanes_b, subset=train, mtry=54,importance=T)
+bag.nhanes
+
+bag.predict=predict(bag.nhanes,nhanes_b_test)
+table(bag.predict,test.mort)
+
+importance(bag.nhanes)
+varImpPlot(bag.nhanes,cex=0.7)
+
+# Bagging using sqrt(p) variables (7 variables)
+set.seed(850724)
+bag.nhanes7=randomForest(mortstat~., data=nhanes_b, subset=train, mtry=7,importance=T)
+bag.nhanes7
+
+bag.predict7=predict(bag.nhanes7,nhanes_b_test)
+table(bag.predict7,test.mort)
+
+importance(bag.nhanes7)
+varImpPlot(bag.nhanes7,cex=0.7)
+```
+
+#### Table 3
+|                 Model              |   Test Error   | True positive | True  negative |
+|:----------------------------------:|:--------------:|:-------------:|:--------------:|
+| Decision Tree (before pruning)     |     0.2120     |    0.3097     |     0.9026     |   
+| Decision Tree (after pruning)      |     0.1908     |    0.1032     |     0.9784     |
+| Bagging (all variables)            |     0.1983     |    0.2065     |     0.9444     |
+| Bagging ($\sqrt p= 7$ variables)   |     0.1858     |    0.1419     |     0.9753     |
+| SVM (best cost)                    |     0.1970     |    0.0256     |     0.9907     |
+| SVM (cost=10, best mortality pred) |     0.1983     |    0.2949     |     0.9149     |
+
+Then, tree-based methods were implemented to see if these methods can improve prediction and reduce prediction error. In the first decision tree, 11 variables (**RIDAGEEX**, **INDFMINC**, **DIQ010**, **DMDHREDU**, **BPXPLS**, **MCQ160G**, **LBXWBCSI**, **DMDEDUC2**, **MCQ160B**, **WHD130**, and **LBXHCT**) and 17 nodes were used. The residual mean variance was 0.68 and the misclassification error rate was 0.1397 in the training set (the plot and the details on each node are provided above in the output). The test misclassification error rate was 0.2120, but had better prediction for mortality (48/155=0.31) than one from logistic regression with all variables. To improve prediction performance, the next step was to prune the tree. The result showed that the tree with 5 terminal nodes have the lowest cross-validation error rate (dev) of 155. Pruning improved test misclassification rate to 0.1908 but prediction of mortality was worse (16/155=0.10) than before pruning. Bagging creates multiple copies of the original training data set using the bootstrap, fits a separate decision tree to each copy, and combine all of the trees to create a single predictive model. As such, bagging can be used to reduce variance. In the first step, all variables were considered at each split of the tree and the test error was 0.1983 (prediction for mortality = 32/155=0.21). Some of the most influential variables for bagging were **RIDAGEMN**, **RIDAGEEX**, and **MCQ160G**. Using $\sqrt p = 7$ number of variables at each split, the test error was improved to 0.1858, but performed worse in predicting mortality (22/155=0.14).  
+
+## SUPPORT VECTOR MACHINE
+```{r}
+library(e1071)
+set.seed(319)
+train=sample(1:nrow(nhanes_b),nrow(nhanes_b)/2)
+nhanes_b_train=nhanes_b[train,]
+nhanes_b_test=nhanes_b[-train,]
+
+svm.linear001=svm(mortstat~.,data=nhanes_b_train,kernel="linear",cost=0.01)
+summary(svm.linear001)
+svm.linear01=svm(mortstat~.,data=nhanes_b_train,kernel="linear",cost=0.1)
+summary(svm.linear01)
+svm.linear05=svm(mortstat~.,data=nhanes_b_train,kernel="linear",cost=0.5)
+summary(svm.linear05)
+svm.linear1=svm(mortstat~.,data=nhanes_b_train,kernel="linear",cost=1)
+summary(svm.linear1)
+svm.linear5=svm(mortstat~.,data=nhanes_b_train,kernel="linear",cost=5)
+summary(svm.linear5)
+svm.linear10=svm(mortstat~.,data=nhanes_b_train,kernel="linear",cost=10)
+summary(svm.linear10)
+
+# Training error
+train.pred1=predict(svm.linear1,nhanes_b_train)
+table(train.pred1,nhanes_b_train$mortstat)
+train.pred5=predict(svm.linear5,nhanes_b_train)
+table(train.pred5,nhanes_b_train$mortstat)
+train.pred10=predict(svm.linear10,nhanes_b_train)
+table(train.pred10,nhanes_b_train$mortstat)
+
+# Test error
+test.pred1=predict(svm.linear1,nhanes_b_test)
+table(test.pred1,nhanes_b_test$mortstat)
+test.pred5=predict(svm.linear5,nhanes_b_test)
+table(test.pred5,nhanes_b_test$mortstat)
+test.pred10=predict(svm.linear10,nhanes_b_test)
+table(test.pred10,nhanes_b_test$mortstat)
+
+# Using tune( ) to select an optimal cost
+set.seed(319)
+tune.out <- tune(svm,mortstat~., data=nhanes_b_train, kernel="linear",
+            ranges=list(cost=c(0.01,0.05,0.1,0.5,1.0,5,10,20)))
+summary(tune.out)
+
+# Computnig the training and test error rate using the best cost
+svm.linear.best=svm(mortstat~.,kernel="linear",
+                    data=nhanes_b_train,cost=tune.out$best.parameter$cost)
+train.pred.best=predict(svm.linear.best,nhanes_b_train)
+table(train.pred.best,nhanes_b_train$mortstat)
+
+test.pred.best=predict(svm.linear.best,nhanes_b_test)
+table(test.pred.best,nhanes_b_test$mortstat)
+
+```
+
+Support vector machine can be used for classification. Various costs (0.01, 0.05, 0.1, 0.5, 1, 5, 10) were tried with linear kernel. Among the costs tested, $cost=0.1$ had the lowest test error at 0.1970. However, the ability to accurately predict mortality was very low at 0.0256. 
+
+
+### CONCLUSION
+
+Although some of the methods provided low misclassification error overall, the performance in predicting mortality was limited. Among the methods explored, the test error was the lowest in logistic regression using all variables, while decision tree without pruning had the best predictive accuracy for mortality.  
+

@@ -1,0 +1,856 @@
+---
+title: "NHANES Project"
+author: "Shuqing Wu"
+date: "2018.3.14."
+output: pdf_document
+---
+  
+  
+Had discussion with: Diego Martinez, Martin Skarzynski, Sarah Dudgeon, Yiran Song.    
+  
+  
+  
+## Data Pre-Processing.  
+
+
+Examine dataset:
+```{r dev='png'}
+load(file="D:/courses/google drive/SML/nhanes/nhanes2003-2004.Rda")
+dat.orig<-nhanes2003_2004
+dat<-dat.orig
+dim(dat)
+classes<-sapply(dat,class)
+table(classes)
+int.var<-which(classes %in% names(table(classes))[2])
+names(dat)[int.var]
+dat[,int.var]<-factor(dat[,int.var])
+
+```
+  
+  
+The dataset consists of `r dim(dat)[1] ` cases and `r dim(dat)[2] ` variables. Mortstat is originally set as integer, while the other variables are set as factors. Mortstat is now converted to factor.   
+  
+  
+  
+```{r dev='png'}
+n.levels<-sapply(dat,nlevels)
+summary(n.levels)
+hist(n.levels,breaks=20)
+dat<-dat[,-which(n.levels==0)]
+dim(dat)
+
+```
+  
+  
+Examining number of levels of each variable. There are some variables with a large number of levels, indicating that these variables likely should be continuous variables.  
+  
+Certain variables have 0 levels, containing only NA's. These variables are now excluded from the dataset.  
+  
+  
+  
+``` {r}
+na.count.col<-apply(dat,2,function(x) sum(is.na(x)))
+exc.age<-which(is.na(dat$RIDAGEEX))
+exc.mort<-which(is.na(dat$mortstat))
+summary(na.count.col)
+na.count.row<-apply(dat,1,function(x) sum(is.na(x)))
+summary(na.count.row)
+cutoff<-nrow(dat)*0.5
+dat<-dat[,-which(na.count.col>=cutoff)]
+dat<-dat[,-which(names(dat) %in% c("RIDAGEYR","RIDAGEMN","SEQN"))]
+dim(dat)
+```
+  
+  
+Counting NA's by columns and rows. The response variables RIDAGEEX and mortstat have a number of NA's. The corresponding row numbers are stored to be excluded at a later step.   
+  
+The proportion of NA's is quite high compared to the number of variables and number of cases. Looking at the variables of descriptions on the NHANES website, it seems most NA's are introduced because the question is only asked of a certain demographic. Thus NA's do provide certain information.
+  
+However, variables with a very high proportion of NA's are still problematic. When split into training and testing datasets, it is possible that the training set will not have enough of non-NA values for these variables to be useful. Therefore variables with more than 50% NA's are excluded here.      
+  
+In addition, the variables RIDAGEYR and RIDAGEMN are excluded because they are almost equivalent to the response variable, age in months at the time of examination. SEQN is also excluded because it only represents a coding number for the respondent so it is not meaningful.  
+  
+The dataset now has `r dim(dat)[1] ` cases and `r dim(dat)[2] ` variables remaining.  
+  
+  
+``` {r}
+dat.2<-sapply(c(1:ncol(dat)),function(x) as.numeric(levels(dat[,x]))[dat[,x]])
+dat.3<-data.frame(dat.2)
+names(dat.3)<-names(dat)
+dat.4<-data.frame(apply(dat.3,2,function(x) replace(x,which(x %in% c(88,99,777,999,7777,9999,77777,99999)),-1)))
+
+```
+  
+  
+Looking at the variable descriptions on the NHANES website, numbers like 88, 99, 777, 999, etc. are used to encode situations for respondent not knowing the answer, or refusing to tell. These numbers are replaced by -1 here to facilitate the next step.  
+  
+  
+  
+
+```{r}
+v.unique<-apply(dat.4,2,function(x) length(unique(x)))
+dat.4<-dat.4[,-which(v.unique<=1)]
+```
+  
+  
+Variables with only one value are also excluded from the dataset.   
+  
+  
+```{r}
+v.unique<-apply(dat.4,2,function(x) length(unique(x)))
+short<-which(v.unique<=10)
+v.max<-apply(dat.4,2,function(x) max(na.omit(x)))
+low<-which(v.max<=10)
+fact.var<-short[short %in% low]
+
+check.int<-apply(dat.4,2,function(x) sum(((unique(na.omit(x))%%1)!=0)+0))
+int.var<-which(check.int>0)
+fact.var<-fact.var[-which(fact.var %in% int.var)]
+```
+  
+  
+As it is not evident from the data which variables are categorical and which are continuous, the following conditions are used to approximate which variables should be set as factors:   
+--Less than 10 unique values.  
+--Values are not larger than 10.  
+--Values are all integers.  
+  
+Approximation according to these conditions is not perfect. However, categorical variables with many categories usually indicate value ranges, so it may be acceptable to treat them as continuous variables. In addition, considering there are `r dim(dat.4)[2] ` variables, mistaking some variable types may not be too problematic.   
+  
+  
+```{r}
+dat.5<-dat.4[,fact.var]
+dat.5[is.na(dat.5)]<-(-2)
+dat.5<-data.frame(apply(dat.5,2,factor))
+```
+  
+  
+As mentioned previously, it seems most NA's are introduced because the question is only asked of a certain demographic. For categorical variables, these are replaced by -2, to indicate a separate category, which will be created using a dummy variable in a later step. The same goes to values set as -1 in the previous step.    
+  
+  
+```{r}
+dat.6<-dat.4[,-fact.var]
+dat.6[is.na(dat.6)]<-0
+dat.7<-data.frame(apply(dat.6,2,function(x) replace(x,which(x==-1),mean(x[which(x!=0 & x!=-1)]))))
+
+```
+  
+  
+For continuous variables, it is not entirely clear how these NA's should be handled. It may not be suitable to replace them with the mean/median/mode of existing values, since they represent a separate demographic. Therefore here they are replaced by 0, so that in models involving coefficients for variables, they should not have an effect. In addition, values previously set as -1 are replaced by the mean of existing values (excluding 0 and -1 values).     
+
+   
+  
+```{r}
+dat.8<-data.frame(dat.5,dat.7)
+classes.8<-sapply(dat.8,class)
+table(classes.8)
+
+```
+  
+  
+Combining the factor and numeric variables into one dataframe. Now there are `r table(classes.8)[[1]]` factor variables and `r table(classes.8)[[2]]` numeric variables.   
+
+
+``` {r}
+mat.1<-model.matrix(~.,data=dat.8)[,-1]
+```
+  
+  
+Using the model.matrix() function to create dummy variables, and excluding the intercept column. The dataset now has `r ncol(mat.1) ` variables.   
+  
+  
+  
+  
+## Predicting age at time of exam.  
+  
+Because of the large number of variables in the dataset, lasso (scaled and unscaled) and principle component regression are useful for reducing the number of terms in the model.    
+  
+  
+```{r}
+mat.2<-mat.1[-exc.age,]
+
+y<-mat.2[,which(colnames(mat.2)=="RIDAGEEX")]
+x<-mat.2[,-which(colnames(mat.2)=="RIDAGEEX")]
+
+set.seed(2018)
+train.rows<-sample(1:nrow(mat.2),nrow(mat.2)*0.3)
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-x[train.rows,]
+x.test<-x[-train.rows,]
+
+mat.2<-data.frame(mat.2)
+mat.train<-data.frame(mat.2[train.rows,])
+mat.test<-data.frame(mat.2[-train.rows,])
+
+```
+
+  
+Rows where RIDAGEEX was orginally NA, which were stored previously, are excluded here. The dataset now has `r dim(mat.2)[1]` cases and `r dim(mat.2)[2]` variables.   
+  
+Because of the large amount of variables and observations, only 30% of the dataset will be used as the training set in order to facilitate computation.    
+  
+  
+  
+### Unscaled lasso:  
+  
+  
+```{r dev='png'}
+library(glmnet)
+grid<-10^seq(10,-2,length=100)
+lasso.mod<-glmnet(x.train,y.train,alpha=1,lambda=grid)
+set.seed(2018)
+cv.out<-cv.glmnet(x.train,y.train,alpha=1)
+plot(cv.out)
+bestlam<-cv.out$lambda.min
+
+lasso.coef<-predict(lasso.mod,type="coefficients",s=bestlam)
+lasso.coef.2<-data.frame(Variable=c("Intercept",colnames(mat.2)[summary(lasso.coef)[-1,1]-1]),Coef=summary(lasso.coef)[,3])
+
+lasso.pred.train<-predict(lasso.mod,s=bestlam,newx=x.train)
+mse.train<-mean((lasso.pred.train-y.train)^2)
+
+lasso.pred.test<-predict(lasso.mod,s=bestlam,newx=x.test)
+mse.test<-mean((lasso.pred.test-y.test)^2)
+
+
+fuv.train<-sum((lasso.pred.train-y.train)^2)/sum((y.train-mean(y.train))^2)
+fuv.test<-sum((lasso.pred.test-y.test)^2)/sum((y.test-mean(y.test))^2)
+fuv.train
+fuv.test
+mse.train
+mse.test
+n.coef<-nrow(lasso.coef.2)-1
+
+```
+  
+   
+The best lambda given by cross validation is `r bestlam `.   
+  
+`r nrow(lasso.coef.2)-1` variables are used in the lasso model, which is a reduction of `r ncol(mat.2)-(nrow(lasso.coef.2)-1)` variables compared to the dataset given by the model.matrix() function. Because of the creation of dummy variables, it is not clear how this compares to the number of variables in the original dataset.   
+  
+The 10 variables that have the largest coefficients (in absolute value) are:  
+  
+```{r}
+lasso.coef.2[order(abs(lasso.coef.2$Coef),decreasing = T)[1:10],]
+```
+ 
+ 
+The training MSE is `r mse.train ` and the testing MSE is `r mse.test `. In order to be able to compare with the scaled lasso method and PCR, the fraction of unexplained variance will be used. The training FUV is `r fuv.train ` and testing FUV is `r fuv.test `.  
+  
+These errors are very small. It might be because of the large number of variables used.  
+  
+It is also possible that there is another variable included in the dataset similar to RIDAGEYR and RIDAGEMN, which are essentially equivalent to RIDAGEEX. However, through a scanning of the variables used in the model, there does not seem to be such a variable. In addition, if there were such a variable, the model likely would not need to include `r nrow(lasso.coef.2)-1` variables.  
+  
+Another possibility is that the small error is because many of the questions are only asked of respondents in a certain age range, so whether the question is answered gives information about the respondent's age. From the perspective of putting the model to practical use, these variables should also be excluded, because they are dependent on already knowing the respondent's age. However, the task of finding and removing these variables will not be included here.    
+  
+  
+### Scaled lasso:   
+  
+Because of the different scales of variables, the lasso method gives unequal penalties to different variables. Therefore a scaled lasso is also tried here. 
+  
+  
+```{r}
+mat.scale<-scale(mat.2)
+nan.count.col<-apply(mat.scale,2,function(x) sum(is.nan(x)))
+
+mat.scale<-mat.scale[,-which(nan.count.col>0)]
+
+y<-mat.scale[,which(colnames(mat.scale)=="RIDAGEEX")]
+x<-mat.scale[,-which(colnames(mat.scale)=="RIDAGEEX")]
+
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-x[train.rows,]
+x.test<-x[-train.rows,]
+
+mat.scale<-data.frame(mat.scale)
+mat.train<-data.frame(mat.scale[train.rows,])
+mat.test<-data.frame(mat.scale[-train.rows,])
+```
+  
+  
+Scaling data and removing variables with near zero variance. There are now `r ncol(mat.scale)` variables.    
+  
+  
+
+```{r dev='png'}
+grid<-10^seq(10,-2,length=100)
+lasso.mod<-glmnet(x.train,y.train,alpha=1,lambda=grid)
+set.seed(2018)
+cv.out<-cv.glmnet(x.train,y.train,alpha=1)
+plot(cv.out)
+bestlam<-cv.out$lambda.min
+
+lasso.coef<-predict(lasso.mod,type="coefficients",s=bestlam)
+lasso.coef.2<-data.frame(Variable=c("Intercept",colnames(mat.scale)[summary(lasso.coef)[-1,1]-1]),Coef=summary(lasso.coef)[,3])
+
+
+lasso.pred.train<-predict(lasso.mod,s=bestlam,newx=x.train)
+mse.train<-mean((lasso.pred.train-y.train)^2)
+
+
+lasso.pred.test<-predict(lasso.mod,s=bestlam,newx=x.test)
+mse.test<-mean((lasso.pred.test-y.test)^2)
+
+
+mse.train
+mse.test
+fuv.train<-sum((lasso.pred.train-y.train)^2)/sum((y.train-mean(y.train))^2)
+fuv.test<-sum((lasso.pred.test-y.test)^2)/sum((y.test-mean(y.test))^2)
+fuv.train
+fuv.test
+
+```  
+    
+   
+The best lambda given by cross validation is `r bestlam `.   
+  
+`r nrow(lasso.coef.2)-1` variables are used in the lasso model, which is a reduction of `r n.coef-(nrow(lasso.coef.2)-1)` variables compared to the unscaled lasso method.   
+  
+The 10 variables that have the largest coefficients (in absolute value) are:  
+  
+```{r}
+lasso.coef.2[order(abs(lasso.coef.2$Coef),decreasing = T)[1:10],]
+```
+  
+  
+The training MSE is `r mse.train ` and the testing MSE is `r mse.test `. The training FUV is `r fuv.train ` and testing FUV is `r fuv.test `. Even though the scaled lasso uses much fewer variables than the unscaled lasso, its accuracy is almost the same.   
+  
+  
+### Principle component regression:
+  
+  
+```{r dev='png'}
+library(pls)
+
+set.seed(2018)
+pcr.fit<-pcr(RIDAGEEX~.,data=mat.train,scale=F,validation="CV")
+
+validationplot(pcr.fit,val.type="MSEP")
+mse.cv<-MSEP(pcr.fit)
+
+names(which.min(mse.cv$val[1,1,]))
+min(mse.cv$val[1,1,])
+comps<-which.min(mse.cv$val[1,1,])-1
+comps
+
+pcr.pred.test<-predict(pcr.fit,x.test,ncomp=comps)
+mse.test<-mean((pcr.pred.test-y.test)^2)
+
+mse.test
+fuv.test<-sum((pcr.pred.test-y.test)^2)/sum((y.test-mean(y.test))^2)
+fuv.test
+```
+  
+  
+The number of components M which result in the lowest cross validation MSE is `r comps `.  
+  
+Using this number of components, the training MSE is `r mse.train ` and the testing MSE is `r mse.test `. The training FUV is `r fuv.train ` and testing FUV is `r fuv.test `. Although this model uses a much larger number of terms compared to the lasso method, there is not much improvement in accuracy.   
+  
+  
+### PCR with fewer components:
+  
+  
+```{r}
+mse.cv<-MSEP(pcr.fit)
+mse.cv<-round(mse.cv$val[1,1,],digits=2)
+
+names(which(mse.cv==min(mse.cv)))[1:10]
+min(mse.cv)
+comps<-which.min(mse.cv)-1
+comps
+
+pcr.pred.test<-predict(pcr.fit,x.test,ncomp=comps)
+mse.test<-mean((pcr.pred.test-y.test)^2)
+
+mse.test
+fuv.test<-sum((pcr.pred.test-y.test)^2)/sum((y.test-mean(y.test))^2)
+fuv.test
+```  
+  
+  
+From the component to MSE graph above, it can be seen that for a large range of component numbers, the cross validation MSE is almost the same. Here the MSE is rounded to two digits to choose a smaller M with essentially the same MSE. Using `r comps ` components, the testing MSE is `r mse.test ` and testing FUV is `r fuv.test `. This gives basically the same accuracy as the previously chosen M.   
+  
+  
+```{r}
+
+comps<-n.coef
+comps
+
+pcr.pred.test<-predict(pcr.fit,x.test,ncomp=comps)
+mse.test<-mean((pcr.pred.test-y.test)^2)
+
+mse.test
+fuv.test<-sum((pcr.pred.test-y.test)^2)/sum((y.test-mean(y.test))^2)
+fuv.test
+```    
+  
+  
+For further comparison with the lasso method, `r comps ` components are used here, which is the number of variables used in the unscaled lasso. The testing MSE is `r mse.test ` and testing FUV is `r fuv.test `. The accuracy is poorer than the lasso method.  
+  
+  
+  
+  
+  
+  
+  
+  
+## Predicting mortality of participants older than 50.  
+  
+  
+The methods used here are K nearest neighbors, random forest, and support vector machine.    
+  
+  
+  
+### K nearest neighbors, using scaled but not centered data:   
+  
+```{r}  
+mat.2<-data.frame(mat.1[-exc.mort,-which(colnames(mat.1)=="mortstat0")])
+age.50<-which(mat.2$RIDAGEEX>=50*12)
+mat.2<-mat.2[age.50,]
+
+mat.scale<-scale(mat.2,center = F)
+nan.count.col<-apply(mat.scale,2,function(x) sum(is.nan(x)))
+
+mat.scale<-mat.scale[,-which(nan.count.col>0)]
+
+mat.scale<-as.matrix(mat.scale)
+y<-mat.scale[,which(colnames(mat.scale)=="mortstat1")]
+x<-mat.scale[,-which(colnames(mat.scale)=="mortstat1")]
+
+set.seed(2019)
+train.rows<-sample(1:nrow(mat.scale),nrow(mat.scale)*0.3)
+
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-x[train.rows,]
+x.test<-x[-train.rows,]
+
+mat.scale<-data.frame(mat.scale)
+mat.train<-data.frame(mat.scale[train.rows,])
+mat.test<-data.frame(mat.scale[-train.rows,])
+
+```
+  
+  
+Excluding rows where mortstat was NA, and participants younger than 50. Again, because of the large amount of data, only 30% of the dataset is used as training set.  
+  
+  
+As KNN is a distance-based method, the data is scaled here but not centered, as that may affect the distance. Variables with near zero variance are removed.   
+  
+  
+  
+  
+  
+```{r}
+library(class)
+k.vals<-seq(5,(length(train.rows))*0.02,by=1)
+corr.rates<-sapply(k.vals,function(x) {
+  set.seed(2018)
+  knn.pred<-knn(x.train,x.test,y.train,k=x)
+  mean(knn.pred==y.test)
+})
+correct.df<-data.frame(K=k.vals,CorrectPred=corr.rates)
+ord.k<-correct.df[order(correct.df$CorrectPred,decreasing = T),]
+ord.k
+```
+  
+  
+Using K values from 5 to 2% of the training observations (`r max(k.vals) `), the correct prediction rates are essentially the same, around 80%.  
+  
+  
+  
+### K nearest neighbors, using scaled and centered data:   
+  
+```{r}  
+mat.scale<-scale(mat.2)
+nan.count.col<-apply(mat.scale,2,function(x) sum(is.nan(x)))
+
+mat.scale<-mat.scale[,-which(nan.count.col>0)]
+
+mat.scale<-as.matrix(mat.scale)
+y<-mat.scale[,which(colnames(mat.scale)=="mortstat1")]
+x<-mat.scale[,-which(colnames(mat.scale)=="mortstat1")]
+
+
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-x[train.rows,]
+x.test<-x[-train.rows,]
+
+mat.scale<-data.frame(mat.scale)
+mat.train<-data.frame(mat.scale[train.rows,])
+mat.test<-data.frame(mat.scale[-train.rows,])
+
+```
+  
+  
+Using scaled and centered data here, for comparison.  
+  
+  
+  
+```{r}
+k.vals<-seq(5,(length(train.rows))*0.02,by=1)
+corr.rates<-sapply(k.vals,function(x) {
+  set.seed(2018)
+  knn.pred<-knn(x.train,x.test,y.train,k=x)
+  mean(knn.pred==y.test)
+})
+correct.df<-data.frame(K=k.vals,CorrectPred=corr.rates)
+ord.k<-correct.df[order(correct.df$CorrectPred,decreasing = T),]
+ord.k
+```  
+  
+  
+The correct prediction rates are essentially the same as using uncentered data.  
+  
+  
+  
+### Random Forest    
+  
+  
+```{r}  
+mat.2<-data.frame(mat.1[-exc.mort,-which(colnames(mat.1)=="mortstat0")])
+age.50<-which(mat.2$RIDAGEEX>=50*12)
+mat.2<-mat.2[age.50,]
+mat.2$mortstat1<-as.factor(mat.2$mortstat1)
+
+y<-mat.2[,which(colnames(mat.2)=="mortstat1")]
+x<-mat.2[,-which(colnames(mat.2)=="mortstat1")]
+
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-x[train.rows,]
+x.test<-x[-train.rows,]
+
+mat.train<-data.frame(mat.2[train.rows,])
+mat.test<-data.frame(mat.2[-train.rows,])
+
+```  
+  
+  
+Using unscaled data for random forest.  
+  
+  
+```{r}
+library(randomForest)
+set.seed(2018)
+rf.mod<-randomForest(mortstat1~.,data=mat.train,importance=T)
+rf.pred.train<-predict(rf.mod,newdata=mat.train)
+mse.train<-mean(rf.pred.train==y.train)
+mse.train
+
+rf.pred.test<-predict(rf.mod,newdata=mat.test)
+mse.test<-mean(rf.pred.test==y.test)
+mse.test
+```
+  
+  
+Using random forest, the correct prediction rate is `r mse.test `, which is basically the same accuracy as using KNN.  
+  
+The 10 most important variables are:   
+  
+  
+```{r}
+imp<-importance(rf.mod)
+imp[order(abs(imp[,4]),decreasing=T)[1:10],]
+imp.var<-rownames(imp[order(abs(imp[,4]),decreasing=T)[1:20],])
+varImpPlot(rf.mod)
+
+```
+  
+  
+  
+  
+  
+### Support vector machine:  
+  
+  
+```{r}  
+mat.2<-data.frame(mat.1[-exc.mort,-which(colnames(mat.1)=="mortstat0")])
+age.50<-which(mat.2$RIDAGEEX>=50*12)
+mat.2<-mat.2[age.50,]
+
+
+mat.scale<-scale(mat.2)
+nan.count.col<-apply(mat.scale,2,function(x) sum(is.nan(x)))
+
+mat.scale<-mat.scale[,-which(nan.count.col>0)]
+
+
+y<-mat.scale[,which(colnames(mat.scale)=="mortstat1")]
+x<-mat.scale[,-which(colnames(mat.scale)=="mortstat1")]
+
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-as.matrix(x[train.rows,])
+x.test<-as.matrix(x[-train.rows,])
+
+
+mat.scale<-data.frame(mat.scale)
+mat.scale$mortstat1<-as.factor(mat.scale$mortstat1)
+mat.train<-data.frame(mat.scale[train.rows,])
+mat.test<-data.frame(mat.scale[-train.rows,])
+
+```  
+  
+  
+Using scaled data for SVM.  
+  
+  
+  
+```{r}
+library(e1071)
+set.seed(2018)
+svm.mod<-svm(mortstat1~.,dat=mat.train,kernel="linear",cost=1,scale=F)
+
+cons.var<-lapply(1:ncol(mat.scale),function(x) mat.scale[1,x])
+names(cons.var)<-names(mat.scale)
+
+plot(svm.mod,mat.train,LBXLYPCT~RIDAGEEX,slice=cons.var[-which(names(cons.var) %in% c("LBXLYPCT","RIDAGEEX","mortstat1"))])
+
+svm.pred.test<-predict(svm.mod,x.test)
+mse.test<-mean(svm.pred.test==y.test)
+mse.test
+
+```
+  
+  
+The decision boundary is not visible here since the feature space has many dimensions, so it is difficult to find the correct slice to show the boundary.    
+  
+Using cost parameter=1, the correct prediction rate is `r mse.test `, which is poorer than the previous methods. This may be due to choosing a cost parameter at random.  
+  
+Cross validation was attempted in order to tune the cost parameter, however the results failed to converge, which may be because of the large number of variables. Instead, a few more cost parameters will be tried manually.  
+  
+ 
+  
+```{r}
+c.par<-10
+svm.mod<-svm(mortstat1~.,dat=mat.train,kernel="linear",cost=c.par,scale=F)
+
+svm.pred.test<-predict(svm.mod,x.test)
+mse.test<-mean(svm.pred.test==y.test)
+mse.test
+
+```  
+  
+  
+Using cost parameter=`r c.par `, the correct prediction rate is `r mse.test `.    
+  
+  
+```{r}
+c.par<-100
+svm.mod<-svm(mortstat1~.,dat=mat.train,kernel="linear",cost=c.par,scale=F)
+
+svm.pred.test<-predict(svm.mod,x.test)
+mse.test<-mean(svm.pred.test==y.test)
+mse.test
+
+```  
+  
+  
+Using cost parameter=`r c.par `, the correct prediction rate is `r mse.test `.    
+  
+  
+```{r}
+c.par<-0.01
+svm.mod<-svm(mortstat1~.,dat=mat.train,kernel="linear",cost=c.par,scale=F)
+
+svm.pred.test<-predict(svm.mod,x.test)
+mse.test<-mean(svm.pred.test==y.test)
+mse.test
+
+```  
+  
+  
+Using cost parameter=`r c.par `, the correct prediction rate is `r mse.test `. This is a rather large improvement over previous parameters and is closer to the accuracy of KNN and random forest.        
+  
+  
+```{r}
+c.par<-0.001
+svm.mod<-svm(mortstat1~.,dat=mat.train,kernel="linear",cost=c.par,scale=F)
+
+svm.pred.test<-predict(svm.mod,x.test)
+mse.test<-mean(svm.pred.test==y.test)
+mse.test
+
+```  
+  
+  
+Using cost parameter=`r c.par `, the correct prediction rate is `r mse.test `. There is some improvement over the previous parameter, but not much.      
+
+  
+```{r}
+c.par<-1
+svm.mod<-svm(mortstat1~.,dat=mat.train,kernel="radial",cost=c.par,scale=F,gamma=0.1)
+
+svm.pred.test<-predict(svm.mod,x.test)
+mse.test<-mean(svm.pred.test==y.test)
+mse.test
+
+```    
+  
+  
+Using a radial kernel, with cost parameter=`r c.par ` and gamma=0.1, the correct prediction rate is `r mse.test `. Compared to the linear SVM with the same cost parameter, this is a good improvement.   
+  
+  
+  
+  
+  
+### Refitting previous methodes, using only the 20 most important variables given by random forest.   
+  
+  
+As the random forest method has given the importance ranking of each variables, it may be of interest to re-fit previous models using only the most important ones and compare results.    
+  
+  
+### KNN refit:  
+  
+```{r}  
+mat.2<-data.frame(mat.1[-exc.mort,-which(colnames(mat.1)=="mortstat0")])
+age.50<-which(mat.2$RIDAGEEX>=50*12)
+mat.2<-mat.2[age.50,]
+
+mat.scale<-scale(mat.2[,which(colnames(mat.2) %in% c(imp.var,"mortstat1"))])
+nan.count.col<-apply(mat.scale,2,function(x) sum(is.nan(x)))
+
+
+mat.scale<-as.matrix(mat.scale)
+y<-mat.scale[,which(colnames(mat.scale)=="mortstat1")]
+x<-mat.scale[,-which(colnames(mat.scale)=="mortstat1")]
+
+set.seed(2020)
+train.rows<-sample(1:nrow(mat.scale),nrow(mat.scale)*0.3)
+
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-x[train.rows,]
+x.test<-x[-train.rows,]
+
+mat.scale<-data.frame(mat.scale)
+mat.train<-data.frame(mat.scale[train.rows,])
+mat.test<-data.frame(mat.scale[-train.rows,])
+
+```
+  
+  
+Using scaled and centered data here.  
+  
+  
+  
+```{r}
+k.vals<-seq(5,(length(train.rows))*0.02,by=1)
+corr.rates<-sapply(k.vals,function(x) {
+  set.seed(2018)
+  knn.pred<-knn(x.train,x.test,y.train,k=x)
+  mean(knn.pred==y.test)
+})
+correct.df<-data.frame(K=k.vals,CorrectPred=corr.rates)
+ord.k<-correct.df[order(correct.df$CorrectPred,decreasing = T),]
+ord.k
+```    
+  
+  
+The accuracy may actually slightly better than the previous KNN model using all variables.  
+  
+  
+  
+  
+### Support vector machine refit:  
+  
+  
+```{r}  
+mat.2<-data.frame(mat.1[-exc.mort,-which(colnames(mat.1)=="mortstat0")])
+age.50<-which(mat.2$RIDAGEEX>=50*12)
+mat.2<-mat.2[age.50,]
+
+
+mat.scale<-scale(mat.2[,which(colnames(mat.2) %in% c(imp.var,"mortstat1"))])
+nan.count.col<-apply(mat.scale,2,function(x) sum(is.nan(x)))
+
+
+
+y<-mat.scale[,which(colnames(mat.scale)=="mortstat1")]
+x<-mat.scale[,-which(colnames(mat.scale)=="mortstat1")]
+
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-as.matrix(x[train.rows,])
+x.test<-as.matrix(x[-train.rows,])
+
+
+mat.scale<-data.frame(mat.scale)
+mat.scale$mortstat1<-as.factor(mat.scale$mortstat1)
+mat.train<-data.frame(mat.scale[train.rows,])
+mat.test<-data.frame(mat.scale[-train.rows,])
+
+
+```    
+   
+   
+   
+Cross validation for SVM still fails to converge, so only the first SVM model (linear with cost=1) will be re-fitted.  
+   
+   
+```{r}
+
+set.seed(2018)
+svm.mod<-svm(mortstat1~.,dat=mat.train,kernel="linear",cost=1,scale=F)
+
+svm.pred.test<-predict(svm.mod,x.test)
+mse.test<-mean(svm.pred.test==y.test)
+mse.test
+```     
+  
+  
+The correct prediction rate for this model is `r mse.test `, which is a significant improvement compared to the previous linear SVM with cost=1 using all variables.  
+
+
+
+
+
+
+### Random forest refit:    
+  
+  
+```{r}  
+mat.2<-data.frame(mat.1[-exc.mort,-which(colnames(mat.1)=="mortstat0")])
+age.50<-which(mat.2$RIDAGEEX>=50*12)
+mat.2<-mat.2[age.50,]
+mat.2<-mat.2[,which(colnames(mat.2) %in% c(imp.var,"mortstat1"))]
+mat.2$mortstat1<-as.factor(mat.2$mortstat1)
+
+y<-mat.2[,which(colnames(mat.2)=="mortstat1")]
+x<-mat.2[,-which(colnames(mat.2)=="mortstat1")]
+
+y.train<-y[train.rows]
+y.test<-y[-train.rows]
+x.train<-x[train.rows,]
+x.test<-x[-train.rows,]
+
+mat.train<-data.frame(mat.2[train.rows,])
+mat.test<-data.frame(mat.2[-train.rows,])
+
+```  
+  
+  
+Using unscaled data for random forest.  
+  
+  
+```{r}
+set.seed(2018)
+rf.mod<-randomForest(mortstat1~.,data=mat.train,importance=T)
+rf.pred.train<-predict(rf.mod,newdata=mat.train)
+mse.train<-mean(rf.pred.train==y.train)
+mse.train
+
+rf.pred.test<-predict(rf.mod,newdata=mat.test)
+mse.test<-mean(rf.pred.test==y.test)
+mse.test
+```
+  
+  
+There is a very slight improvement of accuracy.    
+  
+  
+In conlusion, reducing the number of variables used to 20 actually gives improved accuracy for these methods.  
+  

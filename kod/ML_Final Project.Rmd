@@ -1,0 +1,336 @@
+---
+title: "Final Project"
+author: "Sarah Dudgeon"
+date: "3/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+options(warn=-1)
+```
+
+#Problem 1: Creating a Prediction Model for a Continuous Outcome: RIDAGEEX on Age in Months at time of Examination
+
+##Creating a dataset and choose variables
+We will start with some exploratory work within the dataset. We will explore variable number, value, and name. We will also characterize the data. 
+```{r}
+load("nhanes2003-2004.Rda")
+df <- data.frame(nhanes2003_2004)
+#better understand my data - how many variables and how/what are they named?
+names(df)
+#better understand my data - What is the range of each variable?
+summary(df)
+#see the percentage of NA per column 
+colMeans(is.na(df))
+#View(df)
+```
+This data is LARGE! Which is good. We want a lot of data so we can better fit our model. After the "view(df)" command, one can see that there are a LOT of missing values marked NA. We will now address the missingness, and transform the data to numeric.
+Before deciding on a method of addressing missingness, we looked at the NHANES codebook online. A lot of the variables are asked of people at only particular ages or only applicable to certain patient populations. To impute would involve a highly involved process of going through every variable  Therefore, the best method of creating a prediction method is to eliminate rows. 
+```{r}
+dim(df)
+#df$RIDAGEEX <- as.numeric(df$RIDAGEEX)
+#Remove all of the columns that have greater than or equal to 7% na per column.
+df2 <- df[,which(colMeans(is.na(df))<=0.07)]
+dim(df2)
+names(df2)
+#Keep only the rows with complete data (values in every column)
+df3 <- df2[complete.cases(df2),]
+dim(df3)
+```
+```{r}
+df4 <- df3[,-1] #Remove Sequence, used to keep track of individual patient identifiers
+df4 <- df4[,-8] #Remove RIDAGEYR
+df4 <- df4[,-8] #Remove 
+df4 <- as.data.frame(apply(df4, 2, as.numeric) )#make everything numeric
+dim(df4)
+names(df4)
+View(df4)
+```
+Now that we have a full data set, we will check for collinearity. If variables are colinear, we will not include them in the model. 
+```{r}
+cor(df4)
+#pairs(df4) - whole data set too large. We will try with speciffic variables.
+```
+There is high collinearity between all variables and HSAQUEX [36] and all variables and PEASCST1 [3]. We are therefore going to remove these variables (columns) to avoid any overfitting within our models. 
+We will check for collinearity using a different method.
+```{r}
+#install.packages("caret")
+library(caret)
+findLinearCombos(df4)
+```
+We find collinearity between 4 & 5 and the machine suggests we get rid of 5. 
+We will now check a summary on our condensed variables list.
+```{r}
+summary(df4)
+```
+Variables 4 & 5 have no variance, and thus cannot help us in our model. 
+We will drop all four [3, 4, 5, & 36] columns. This way, we can be certain that collinearity in our data is not the source of any overfitting. Numbers of variables need to change as data set changes and variables are removed. 
+```{r}
+dim(df4)
+df5 <- df4[,-3] #dropping 3
+dim(df5)
+df5 <- df5[,-3] #dropping 4
+dim(df5)
+df5 <- df5[,-3] #dropping 5
+dim(df5)
+df5 <- df5[,-33] #dropping 36
+dim(df5)
+names(df5)
+```
+We have our complete data set in its 5th itteration. We have 34 variables (columns) and 7894 patients (rows).
+
+##Create and test models to find lowest MSE
+First we will create a test and train set of data using a random sample of about 40% of the data allocated to the training set and 60% to the test set. There are many ways to divide this data set. With more time, we could test several splits of training and test sets to then get a better idea of the MSE of the test set given a more representative sample of the data within the test set. For now, we will use this method.
+```{r}
+#Test and Train
+set.seed(2)
+train <- sample(nrow(df5), 4700)
+df5_train <- df5[train, ]
+df5_test <- df5[-train, ]
+```
+
+###First Model - Random Forest:Bagging
+```{r}
+library(randomForest)
+set.seed(2)
+bag_df5 <- randomForest(RIDAGEEX ~ ., data = df5_train, mtry = 33, ntree = 500)
+pred <- predict(bag_df5, newdata = df5_test)
+#Calc MSE
+mean((pred - df5_test$RIDAGEEX)^2)
+```
+The MSE with bagging is 7166.493
+
+###Second Model - Tree: Boosting
+```{r}
+#Second Model - Tree: Boosting
+library(gbm)
+set.seed(2)
+pows <- seq(-10, 10, by = 0.1)
+lambdas <- 10^pows
+test_err <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    boost_df5 <- gbm(RIDAGEEX ~ ., data = df5_train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    pred_test <- predict(boost_df5, df5_test, n.trees = 1000)
+    test_err[i] <- mean((pred_test - df5_test$RIDAGEEX)^2)
+}
+#Calc MSE & Best Lambda
+#min(test_err)
+lambdas[which.min(test_err)]
+
+boost_Best <- gbm(RIDAGEEX ~ ., data = df5_train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[which.min(test_err)])
+summary(boost_Best)
+```
+The variables with the highest relative influence are DMDHRAGE, then SIAPROXY, then BMXWT. The MSE is not working. 
+
+###Third Model - Lasso
+```{r}
+library(glmnet)
+set.seed(2)
+x <- model.matrix(RIDAGEEX ~ ., data = df5_train)
+x.test <- model.matrix(RIDAGEEX ~ ., data = df5_test)
+y <- df5_train$RIDAGEEX
+lasso_mod <- glmnet(x, y, alpha = 1)
+cv_out <- cv.glmnet(x, y, alpha = 1)
+bestlam <- cv_out$lambda.min
+pred <- predict(lasso_mod, s = bestlam, newx = x.test)
+#Calc MSE
+mean((pred - df5_test$RIDAGEEX)^2)
+```
+The test MSE for Model 3 using Lasso is 16969.34. We will evaluate this at the end of the section.
+
+###Fourth Model - Linear Regression
+```{r}
+#--------------------------------------------------------------------- model 4.1
+lm <- lm(RIDAGEEX ~ ., data = df5_train)
+pred <- predict(lm, df5_test)
+#Calculate MSE
+mean((pred - df5_test$RIDAGEEX)^2)
+#--------------------------------------------------------------------- model 4.2
+lm2 <- lm(RIDAGEEX ~ DMDHRAGE+SIAPROXY+BMXWT, data = df5_train)
+pred2 <- predict(lm2, df5_test)
+#Calculate MSE
+mean((pred2 - df5_test$RIDAGEEX)^2)
+#--------------------------------------------------------------------- model 4.3
+lm3 <- lm(RIDAGEEX ~ DMDHRAGE*SIAPROXY*BMXWT+(DMDHRAGE^2), data = df5_train)
+pred3 <- predict(lm3, df5_test)
+#Calculate MSE
+mean((pred3 - df5_test$RIDAGEEX)^2)
+#--------------------------------------------------------------------- model 4.4
+lm4 <- lm(RIDAGEEX ~ (DMDHRAGE^2)*(SIAPROXY^2)*(BMXWT^2), data = df5_train)
+pred4 <- predict(lm4, df5_test)
+#Calculate MSE
+mean((pred4 - df5_test$RIDAGEEX)^2)
+#--------------------------------------------------------------------- model 4.5
+lm5 <- lm(RIDAGEEX ~ DMDHRAGE+SIAPROXY, data = df5_train)
+pred5 <- predict(lm5, df5_test)
+#Calculate MSE
+mean((pred5 - df5_test$RIDAGEEX)^2)
+```
+Of my linear regressions, the best is the first model, Model 4.1. It has the lowest MSE. It also has all variables with no interaction terms and no transformation.
+
+##Model Choice
+
+Model #  | MSE
+---------|----------
+Model 1  | 7166.493
+Model 3  | 16969.34
+Model 4.1| 17012.62
+Model 4.2| 19890.1
+Model 4.3| 17113.02
+Model 4.4| 17113.02
+Model 4.5| 20198.92
+
+We choose the first model because it has the smallest MSE. MSE is the average of the y-value differences between our predicted outcome and the actual outcome within our test sets. The models were created from our train sets.
+
+#Problem 2: Creating a Prediction Model for a Continuous Outcome: mortstat for Patients with Age >= 50
+
+##Creating a data set and choosing variables
+We will make a new dataset for this problem. We will start by deleting any entries (rows) with "NA" for the mortstat variable, our outcome.
+```{r}
+dim(df)
+mort <- df[-which(is.na(df$mortstat)), ]
+dim(mort)
+```
+We lost almost half of our entries, which could cause serious problems for our reliability of our outcome prediction, but this is our best option for now. As prediction of mortality status would be very difficult to impute. One cannot simply add the mean (.5) as the new value. We choose to only use the most reliable data, which is the data entered without NA outcomes. So we again will address missingness by dropping NA values in a methodologic way.
+We will start by converting everything to a numeric value, then fitting our data to our research question, addressing patients only age 50 or greater.
+```{r}
+mort <- as.data.frame(apply(mort, 2, as.numeric) )
+mort2 <- mort[which(mort$RIDAGEYR>=50), ]
+```
+We will again look at percent missingness.
+```{r}
+colMeans(is.na(mort2))
+```
+A lot of variables again have 100% or nearly 100% missingness. However, we know that our code above worked because our morstat variable has 0% missingness. We will try to get rid of variables with greater than 7% missingness again.
+```{r}
+mort3 <- mort2[,which(colMeans(is.na(mort2))<=0.07)]
+dim(mort3)
+#View(mort3)
+```
+We now have a dataset with 82 variables (col) and 2504 entries (row). Based on the grid view of our data frame, we can see that again, the NA values regularly occur with the same entries. We will delete the entries with multiple NA's.
+```{r}
+mort4 <- mort3[complete.cases(mort3),]
+dim(mort4)
+```
+Now that we have a full data set, we will check for collinearity. If variables are colinear, we will not include them in the model.
+```{r}
+names(mort4)
+cor(mort4)
+```
+We will remove our 3rd, 11th, 37th, 38th, 39th, 61st, 69th, 72nd, 74th, and 80th. They have strong collinearity with every other variable. The rest look good. There is no strong correlation between other variables and them. 
+```{r}
+library(caret)
+findLinearCombos(mort4)
+```
+The linear combos command suggests we remove the 42nd variable as well. 
+We will begin removing all of these variables.
+```{r}
+dim(mort4)
+mort5 <- mort4[,-3] #dropping 3
+dim(mort5)
+mort5 <- mort5[,-10] #dropping 11 (-1)
+dim(mort5)
+mort5 <- mort5[,-35] #dropping 37 (-2)
+dim(mort5)
+mort5 <- mort5[,-35] #dropping 38 (-3)
+dim(mort5)
+mort5 <- mort5[,-35] #dropping 39 (-4)
+dim(mort5)
+mort5 <- mort5[,-37] #dropping 42 (-5)
+dim(mort5)
+mort5 <- mort5[,-55] #dropping 61 (-6)
+dim(mort5)
+mort5 <- mort5[,-62] #dropping 69 (-7)
+dim(mort5)
+mort5 <- mort5[,-64] #dropping 72 (-8)
+dim(mort5)
+mort5 <- mort5[,-65] #dropping 74 (-9)
+dim(mort5)
+mort5 <- mort5[,-70] #dropping 80 (-10)
+dim(mort5)
+mort5 <- mort5[,-1] #dropping SEQN
+dim(mort5)
+names(mort5)
+#View(mort5)
+```
+```{r}
+summary(mort5)
+```
+Variable 3 has no variance, we will therefore remove it.
+```{r}
+mort5 <- mort5[,-3] #dropping 3
+dim(mort5)
+names(mort5)
+mort5$mortstat <- as.factor(mort5$mortstat)
+```
+We have double checked all of our work and we successfully dropped all of our potentially worrisome variables which could cause overfitting within our model. We will now continue with our fifth iteration of the dataset with 69 variables and 2126 entries. Additionally, we converted our outcome variable to a factor, as it is a binomial outcome.
+
+##Create and test models to find Highest % Correct (or highest AUC)
+First we will create a test and train set of data using a random sample of about 40% of the data allocated to the training set and 60% to the test set. There are many ways to divide this data set. With more time, we could test several splits of training and test sets to then get a better idea of the MSE of the test set given a more representative sample of the data within the test set. For now, we will use this method.
+```{r}
+#Test and Train
+set.seed(2)
+train <- sample(nrow(mort5), 850)
+train <- sample(nrow(mort), 4700)
+mort5_train <- mort5[train, ]
+mort5_test <- mort5[-train, ]
+```
+
+###First Model - Logarithmic Regression with all variables untransformed
+```{r}
+#First Model - Logarithmic Regression with all variables untransformed
+glm_1 <- glm(mortstat ~ ., data=mort5_train, family=binomial)
+summary(glm_1)$coef
+pred_1 <- predict(glm_1, newdata = mort5_test)
+glm_pred <- rep(0, length(mort5_test$mortstat))
+glm_pred[pred_1>.5]=1
+table(glm_pred,mort5_test$mortstat)
+```
+```{r}
+(58+18)/(240+58+18+35)
+```
+Our test error rate is 21.6%. Our Prediction is correct about 79% of the time, which is 29% better than chance alone! 
+
+###Second Model - Logarithmic Regression with Transformed Variables
+```{r}
+#Second Model - Logarithmic Regression with Transformed Variables
+glm_2 <- glm(mortstat ~ (.^2), data=mort5_train, family=binomial)
+summary(glm_2)$coef
+pred_2 <- predict(glm_2, newdata = mort5_test)
+glm_pred2 <- rep(0, length(mort5_test$mortstat))
+glm_pred2[pred_2>.5]=1
+table(glm_pred2,mort5_test$mortstat)
+```
+```{r}
+(40+130)/(128+40+130+53)
+```
+Our test error is 48.4%. Our Prediction is correct about 51% of the time, which is only 1% better than chance alone. This is a bad model.
+
+###Third Model - LDA
+```{r}
+library(MASS)
+lda_mort = lda(mortstat~., data=mort5_train)
+lda_mort
+lda_pred = predict(lda_mort, newdata=mort5_test)
+table(lda_pred$class, mort5_test$mortstat)
+```
+
+```{r}
+(39+32)/(226+39+32+54)
+```
+Percent error (for both types 1 & 2) is 20.2%. Therefore, we have an accuracy of ~80%.
+
+##Model Choice
+
+Model #  | % correct
+---------|----------
+Model 1  | 79%
+Model 2  | 51%
+Model 3  | 80%
+
+We choose the third model because it has the most percent correct. This is taking into account both type 1 and type 2 errors. Additionally we are looking at a single cutoff of sensitivity and specificity for each model. For further exploration of the models, one could create an ROC curve, then calculate the Area Under the Curve, which could take into account every Sensitivity and Specificity cutoff. Therefore, the AUC could be a better measure of model fit.
+
+If one were interested in testing additional models, we could try QDA, KNN, Random Forrests with Bagging or Boosting, or a combination of these. However, one should note that if a combination of models is used, the translation of betas and other variables to plain english becomes much more difficult.

@@ -1,0 +1,284 @@
+---
+title: "Final Project - Statistical Learning"
+author: "Hamed Honari"
+date: "March 18, 2018"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 10pt
+geometry: margin=1in
+editor_options:
+  chunk_output_type: console
+---
+
+## Background:  
+The National Health and Nutrition Examination Survey (NHANES) is a cross-sectional, nationally representative survey that assesses demographic, dietary and health-related questions and can be used to better understand differences in health and nutrition across the life-span. Almost all survey data are made publically available by the National Center for Health Statistics (NCHS).
+
+## Dataset:
+
+The dataset for this project includes a pre-compliled set of 813 variables that you can use in your analysis. The dataset includes the following domains:
+             c(# Demographics
+             "DEMO",# Demographic Variables & Sample Weights
+             # Dietary
+             "DR1TOT", # Dietary Interview - Total Nutrient Intakes, First Day
+             "DR2TOT", # Dietary Interview - Total Nutrient Intakes, Second Day
+             # Examination
+             "BAX", # Balance
+             "BPX", # Blood Pressure
+             "BMX", # Body Measures
+             "CVX", # Cardiovascular Fitness
+             "VIX", # Vision
+             # Laboratory
+             "L13AM",# Cholesterol - LDL & Triglycerides
+             "L13", # Cholesterol - Total & HDL
+             "L25", # Complete Blood Count with 5-part Differential - Whole Blood
+             "L11PSA", # Prostate Specific Antigen (PSA)
+             # Questionnaire
+             "ALQ", # Alcohol Use
+             "BPQ", # Blood Pressure & Cholesterol
+             "DIQ", # Diabetes
+             "HSQ", # Current Health Status
+             "MCQ", # Medical Conditions
+             "SSQ", # Social Support
+             "WHQ") # Weight History
+In addition, the dataset includes a 9-year follow-up mortality status obtained from NCHS linked mortality database.
+
+Quick introduction to a few variables:
+
+SEQN: Respondent sequence number.
+RIDAGEEX: Age in months at time of examination
+RIAGENDR: Gender: 1 = male, 2 = female
+BMXWT: Weight in kg
+BMXHT: Standing Height in cm
+BMXBMI: Body mass index (kg/m **2)
+mortstat: "final mortality status"; (0 - "Assumed alive", 1 -"Assumed Deceased", /* - "Ineligible for mortality follow-up or under age 18")
+The full description of the variables is available at NHANES 2003-2004. For example, DEMO and MCQ components are described at DEMO and MCQ, respectively.
+
+Problem #1:
+Do variable selection and build a prediction model for the age in months at time of examination, RIDAGEEX. You should explain all the steps.
+
+Problem #2:
+For parcipants 50 years and older, build a prediction model for the final mortality status, mortstat. You should explain all the steps.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/NCSU/Engineering/Statitistical Machine Learning - Vadim/HONARI.HAMED.644.FinalProject")
+```
+
+First, the dataset is loaded.  The very first step is to clean the data for any further analysis.  This means to take steps toward the missing values for instance, outliers, etc.  In the following section, the data is cleaned first by looking at different columns of our data that related to the Part I of the analysis.  Looking at the number of missing data at each column, the columns with more than 6% missing values were dropped.  Even though this might require further anlysis and it is always a good practice to look into systematic and mechanistic approach in data cleaning and understand the variables involved in any statistical machine learning, but for the sake of time and scope of this project, the further study regarding the predictors that could directly influence the outcome, AGE in month at the time of examination, RIDAGEEX, only the data with less than 6% missing were selected. Further, one could use imputation for some of these variables, but deciding whether the missing data is completely random or missing at random requires more understanding about the data itself and how it was gathered and compiled.  After, selecting the right columns, the complete cases were selected. 
+```{r}
+# Loading the data
+
+
+load("nhanes2003-2004.Rda")
+
+d <- nhanes2003_2004
+
+# looking at the first 6 rows of the data
+#head(d)
+
+# looking at the last 6 rows of the data
+#tail(d)
+
+# shows the structure of an R subject
+str(d)
+
+s = rep(0,813)
+for (i in 1:813) {
+  s[i] = round(sum(!is.na(d[,i]))/length(d[,i]),4)
+}
+
+
+SORTED <- sort(s, index.return=TRUE, decreasing = TRUE)
+# finding the number of features that the least number of missing data
+# One could impute the missing data but the question is if the data is 
+# missing at random (MAR), completely at random (MCAR) 
+numFeat <- sum(as.numeric(SORTED$x>0.94))
+head(d[,SORTED$x[1:50]])
+
+dim(d)
+
+# nlevel <- sapply(data, nlevel)
+# summary(n, levels)
+class(d$RIDAGEEX)
+nhanes2003_2004$RIDAGEEX <- as.numeric(nhanes2003_2004$RIDAGEEX)
+idxAge <- !is.na(nhanes2003_2004$RIDAGEEX)
+AGE = nhanes2003_2004$RIDAGEEX[idxAge]
+d1 <- nhanes2003_2004[idxAge,]
+dim(d1)
+
+
+length(!is.na(nhanes2003_2004$RIDAGEEX))
+
+s = rep(0,813)
+for (i in 1:813) {
+  s[i] = round(sum(!is.na(d1[,i]))/length(d1[,i]),4)
+}
+
+
+SORTED1 <- sort(s, index.return=TRUE, decreasing = TRUE)
+numFeat <- sum(as.numeric(SORTED1$x>0.97))
+head(d1[,SORTED$ix[1:numFeat]])
+d2 <- d1[,SORTED$ix[2:numFeat]]
+
+dat <- data.frame(sapply( c(1:ncol(d2)) ,function(x) as.numeric((levels(d2[,x])))[d2[,x]]))
+dat <- cbind(dat,AGE)
+names(dat) <- names(d2)
+names(dat)[numFeat] <- c("RIDAGEEX")
+dat <- dat[,-1]
+dat <- dat[,-1]
+#dat <- dat[is.na(dat$RIDAGEEX),]
+
+# Getting rid of the missing valules
+dat=dat[complete.cases(dat),] # drop cases without one or more of these variables
+
+```
+
+
+#### Part 1
+
+In this part, the cleaned data were splitted into two set of training and test set with proportion of 90:10 for training:test.  Using training data set, the model was trained and the values were predicted for test set.  The AIC, BIC and RMSE for this Linear Regression model was obtained.  
+```{r}
+set.seed(1)
+
+# Splitting the data into test and training set from the data
+indx <- sample(1:nrow(dat),0.1*nrow(dat))
+
+# split the data into a 90:10 sample (training vs. test)
+train <- dat[-indx,]
+test <- dat[indx,]
+
+
+# MLR - building a model based on the training set and predicting distance on test data
+fit.train <- lm(train$RIDAGEEX ~ . - RIDAGEEX,data = train)
+fit.pred <- predict(fit.train, test) # predicting distance
+summary(fit.train)
+AIC(fit.train)
+BIC(fit.train)
+# Calculating the prediction accuracy and error rates
+rmse.lm <- sqrt(mean((test$RIDAGEEX - fit.pred)^2))
+rmse.lm
+
+```
+
+Ridge Regression
+```{r}
+require(glmnet)
+require(leaps)
+library (leaps)
+library(glmnet)
+set.seed(1)
+xmat.train <- model.matrix(RIDAGEEX ~ . - RIDAGEEX, data = train)[, -1]
+xmat.test <- model.matrix(RIDAGEEX ~ . - RIDAGEEX, data = test)[, -1]
+
+fit.ridge <- cv.glmnet(xmat.train, train$RIDAGEEX, alpha = 0)
+lambda <- fit.ridge$lambda.min
+lambda
+
+plot(fit.ridge,main="MSE vs. Lambda for Ridge Regression")
+pred.ridge <- predict(fit.ridge, s = lambda, newx = xmat.test)
+rmse.ridge <- sqrt(mean((test$RIDAGEEX - pred.ridge)^2))
+rmse.ridge
+```
+
+In the section below, the Lasso was applied to the clean data.  Since the ridge regression with a wise choise of Lambda can out perform least squares.  The goal in the following section is to also see if the lasso can do a better job than ridge regression.
+```{r}
+require(glmnet)
+library(glmnet)
+grid =10^seq(10,-2, length =100)
+lasso.mod=glmnet(xmat.train, train$RIDAGEEX, alpha = 0, lambda = grid)
+plot(lasso.mod, main="The Lasso")
+
+# Next performing cross-validation and computing associated test error
+set.seed(1)
+cv.out=cv.glmnet(xmat.train, train$RIDAGEEX, alpha=1)
+plot(cv.out)
+bestlam=cv.out$lambda.min
+bestlam   # best value for Lambda
+lasso.pred=predict(lasso.mod,s=bestlam,newx=xmat.test)
+mean((lasso.pred-test$RIDAGEEX)^2)
+
+```
+From the figure above, we can see the coefficient plot that depending on the choice of tuning parameter. Lasso has an advantage over ridge regression in that resulting coeffiecient estimates are sparse.  
+
+
+Part II.
+```{r}
+require(glmnet)
+require(leaps)
+library (leaps)
+library(glmnet)
+# Clearning data for Part II.
+
+# First using all the original data
+d <- nhanes2003_2004
+
+# Selecting the ones that have no missing age and mortality status
+d1 <- d[!is.na(d$RIDAGEYR) & !is.na(d$mortstat),]
+attach(d1)
+dim(d1)
+
+s = rep(0,813)
+for (i in 1:813) {
+  s[i] = round(sum(!is.na(d1[,i]))/length(d1[,i]),4)
+}
+
+SORTED1 <- sort(s, index.return=TRUE, decreasing = TRUE)
+numFeat <- sum(as.numeric(SORTED1$x>0.94))
+head(d1[,SORTED1$ix[1:numFeat]])
+d2 <- d1[,SORTED1$ix[1:numFeat]]
+dim(d2)
+d2$mortstat = mortstat
+d3 <- d2[complete.cases(d2),] # getting the complete cases
+# Dropping the cases that have age less than 50
+idx <- sapply(d3, is.factor)
+d3[idx] <- lapply(d3[idx] ,function(x) as.numeric(as.character(x)))
+dat <- d3[d3$RIDAGEYR>=50,]
+dat <- dat[,-1] # dropping SEQN
+dat <- dat[,-2] # dropping SDDSRVYR
+dat <- dat[,-2] # dropping RIDSTATR
+dat <- dat[,-20] # dropping HSAQUEX
+dat <- dat[,-38] # dropping FIAPROXY
+
+# Remaining number of observations and features
+dim(dat)
+
+indx <- sample(1:nrow(dat),round(0.1*nrow(dat)))
+# split the data into a 90:10 sample (training vs. test)
+
+train <- dat[-indx,]
+test <- dat[indx,]
+
+glm.fits = glm(dat$mortstat~ .,data=dat ,family =binomial )
+summary (glm.fits)
+
+# To see the coefficients for this fitted model
+coef(glm.fits)
+glm.probs = predict(glm.fits,type="response")
+# probabilities for the first 10 values of mortality 
+glm.probs[1:10]
+
+# Mortstat 0: assumed alive, 1 assumed deceased
+glm.pred = rep("alive [0]",length(dat$mortstat))
+glm.pred[glm.probs > 0.5] = "dead  [1]"
+t =table(glm.pred,dat$mortstat)
+t
+correct.pred <- (t[1,1]+t[2,2])/sum(t)
+correct.pred
+```
+In this case, logistic regression correctly predicted 81.8% of the time that if a person is alive or dead.
+
+
+#### Linear Discriminant Analysis
+```{r}
+library(MASS)
+lda.fit = lda(mortstat~ .,data=dat)
+lda.fit
+
+```
+The results show that the probability of being alive in this dataset is predicted as 79.29%, while the probability of being dead according to this data and the model used is about 20.7%. 
+Note that LDA approximates the Bayes classifiers by using the estimates for the distribution, mean and variance .
+
+
+

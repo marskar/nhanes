@@ -1,0 +1,423 @@
+---
+title: "Final Project"
+author: "Shulin Qing"
+date: "3/16/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+# Problem 1: Do variable selection and build a prediction model for the age in months at time of examination, RIDAGEEX. 
+
+(1) Data Cleaning and Variable Selection:  
+* We removed subjects that have missing response variable, RIDAGEEX, and then we removed variables that have more than 5% missing.
+* We removed subjects that have any missing cases by using R command, complete.cases.
+* There are 43 variables left after removing variables that have more than 5% missing. 
+* We investigated the meanings of these variables and determine if some of the variables are very similar to the response variable and their values have no much difference. We found that the values of the variables, RIDAGEYR (Age in years at screening) and RIDAGEMN (Age in months at screening) are very close to the response variable and this may be due to the fact that patients' screening time and examination time are close to each other. The variable, RIDEXMON (six month time period then the examination was performed) can be deduced from the response variable so we exclude the three varaibels RIDAGEYR,RIDAGEMN, and RIDEXMON.  
+* We also want to check if the variables are related to the data collection or data release status, and therefore irrelevant to the age in months at time of examination. We found that SEQN (respondent sequence number),BMDSTATS (Body Measures Component Status Code),PEASCST1 (Blood pressure complete status), SDDSRVYR (data release cycle), RIDSTATR (Interview and examination status of the participant),DR1DRSTZ,DR2DRSTZ (both indicate the quality and completeness of a survey participant's response to the dietary recall section) and HSAQUEX (Source of Health Status Data) are irrelevant to our response variable and we can excluse these variables from analysis.
+* We also excluded variables related to survey weights: WTINT2YR, WTMEC2YR, SDMVPSU and SDMVSTRA.Thus, we excluded 15 variables and there are 28 variables left, one of which is our response variable. 
+* Finally, we removed subjects that answered "don't know" or "refused" to interview questions. There are 7672 observations left.
+
+```{r}
+library(dplyr)
+library(glmnet)
+library(randomForest)
+load("/Users/shulinqing/Downloads/nhanes2003-2004.Rda")
+dat = nhanes2003_2004
+#remove subjects that have missing response variable, RIDAGEEX
+dat = dat[!is.na(dat$RIDAGEEX),]
+#remove columns that have more than 5% missing
+dat1 = dat[,which(colMeans(is.na(dat))<=0.05)]
+#complete cases
+dat.complete = dat1[complete.cases(dat1),]
+ncol(dat.complete) #43
+nrow(dat.complete)
+colnames(dat.complete)
+
+#investigate variables 
+#1.SEQN: respondent sequence number(x)
+#2.BMDSTATS:Body Measures Component Status Code (x)
+table(dat.complete$BMDSTATS)
+#3.BMXWT:weight in kg
+#4.BMXARML:Upper Arm Length
+#5.BMXARMC: Arm Circumference
+#6.PEASCST1:Blood pressure complete status (x)
+table(dat.complete$PEASCST1)
+#7.PEASCTM1:Blood Pressure Time in Seconds
+#8.BPXPULS:Pulse regular or irregular
+#9.SDDSRVYR:data release cycle (x)
+table(dat.complete$SDDSRVYR)
+#10.RIDSTATR:Interview and examination status of the participant.(x)
+table(dat.complete$RIDSTATR)
+#11.RIDEXMON:six month time period (six month time period when the examination was performed - two categories: November 1 through April 30, May 1 through October 31. ) (x)
+#12.RIAGENDR:gender 
+#13 RIDAGEYR:Age in years at screening(x)
+#14.RIDAGEMN:Age in months at screening - 0 to 24 mos(x)
+#15.RIDAGEEX:Best age in months at date of examination for individuals under 80 years of age at the time of MEC exam. (outcome)
+#16.RIDRETH1:Race/Ethnicity
+table(dat.complete$RIDRETH1)
+#17.RIDRETH2:Linked NH3 Race/Ethnicity 
+table(dat.complete$RIDRETH2)
+#18.DMDBORN:Country of Birth
+#19. DMDCITZN:Citizenship Status 
+table(dat.complete$DMDCITZN)
+#remove refused answer because only two cases are in this category
+dat.complete = dat.complete[dat.complete$DMDCITZN!=7,] #7886
+#20. DMDHHSIZ:Total number of people in the Household
+#21.INDFMINC:Annual Family Income
+dat.complete = dat.complete[!dat.complete$INDFMINC%in%c(77,99),] #7769
+#22. DMDHRGND:HH Ref Person Gender(Gender of the household reference person)
+#23. DMDHRAGE:Age in years of the household reference person at the time of HH screening 
+#24.DMDHRBRN: the household reference person country of birth
+#25. DMDHREDU: HH Ref Person Education Level
+table(dat.complete$DMDHREDU)
+#10 answered refused and 33 people answered don't know.
+dat.complete = dat.complete[!dat.complete$DMDHREDU%in%c(7,9),] #7730
+#26. DMDHRMAR: HH Ref Person Marital Status
+table(dat.complete$DMDHRMAR)
+#29 answered refused and 2 people answered don't know.
+dat.complete = dat.complete[!dat.complete$DMDHRMAR%in%c(77,99),] #7699
+#27.SIALANG: the language used during the Sample Person Questionnaire interview
+#28. SIAPROXY:denotes if a proxy respondent was used during the Sample Person Questionnaire interview
+#29. SIAINTRP:denotes if an interpreter was used during the Sample Person Questionnaire interview. The language spoken by the respondent is not reported
+#30. FIALANG:is the language used during the Family Questionnaire interview.
+#31.FIAPROXY: denotes if a proxy respondent was used to complete the Family Questionnaire interview.
+#32. FIAINTRP:denotes if an interpreter was used to complete the Family Questionnaire interview. The language spoken by the respondent is not reported.
+table(dat.complete$FIAINTRP)
+#survey weight:
+#33. WTINT2YR: interviewed participants? ? (x)
+#34. WTMEC2YR:both interviewed and MEC examined participants?(x)
+#35. SDMVPSU:Masked variance pseudo-PSU (primary sampling units (PSUs)) ?(x)
+#36.SDMVSTRA:Masked variance pseudo-stratum ?(x)
+#37.DIQ010:Doctor told you have diabetes
+###here, 5 anwered don't know
+table(dat.complete$DIQ010)
+dat.complete = dat.complete[dat.complete$DIQ010!=9,] #7694
+#38. DIQ050:taking insulin now
+#39.DR1DRSTZ: indicate the quality and completeness of a survey participant's response to the dietary recall section (x)
+#40. DR2DRSTZ:same above (x)
+#41. HSAQUEX:Source of Health Status Data (x)
+#42. MCQ010:Has a doctor or other health professional ever told {you/SP} that {you have/s/he/SP has} asthma?
+table(dat.complete$MCQ010)
+dat.complete = dat.complete[dat.complete$MCQ010!=9,] #7676
+#here,18 people don't know
+#43. MCQ053:Taking treatment for anemia/past 3 mos
+table(dat.complete$MCQ053)
+#here,1 refused, 3 don't know
+dat.complete = dat.complete[!dat.complete$MCQ053%in%c(7,9),] #7672
+
+
+#SELECT VARIABLES
+#A. check if the time variables are very similar to the response variable (no much difference)
+check0 = dat.complete[,(colnames(dat.complete))%in%c("RIDAGEYR","RIDAGEMN","RIDAGEEX","RIDEXMON")]
+
+#B. check if the variables are related to the data collection or data release status, and irrelevant to the age in months at time of examination
+mydat = dat.complete[,!(colnames(dat.complete)) %in% c("SEQN","BMDSTATS","PEASCST1","SDDSRVYR","RIDSTATR","RIDAGEYR","RIDAGEMN","RIDEXMON","WTINT2YR","WTMEC2YR","SDMVPSU","SDMVSTRA","DR1DRSTZ","DR2DRSTZ","HSAQUEX")] #28 variables
+```
+
+(2) Build a prediction model for the age in months at time of examination, RIDAGEEX. 
+* The response variable,RIDAGEEX, is a continuous variable so I would like to use both ridge/lasso regression and regression trees to fit the data.
+* We randomly splitted data into two halves, training data set and testing data set. We built a training model based on the training datsa set and tested the model using the testing data set.
+* Firstly, we built ridge regression. The best lambda for the model from cross validation is 17.096 and the testing MSE is 49851.61.
+* We also built lasso regression. The best lambda for the model from cross validation is 0.534 and the testing MSE is 49318.77, which is lower than the testing MSE of Ridge regression.From the results of lasso regression coefficients, we could find that the lasso model selects all variables.
+* We finally built random forest regression trees to predict RIDAGEEX.The testing error is 26979.02, which is much lower than both lasso and ridge regression. The results indicate that across all of the trees considered in the random forest, DMDHRAGE (Age of the household reference person at the time of HH screening),BMXARML (Upper Arm Length),DMDHHSIZ (total number of people in the Household),BMXWT(weight in kg), and SIAPROXY (if a proxy respondent was used during the Sample Person Questionnaire interview) are the top five most important variables to predict RIDAGEEX. 
+```{r}
+#2. lasso/ridge, scaling, regression tree, cross validation
+#Ridge Regression
+set.seed(123)
+train = sample(1:nrow(mydat),nrow(mydat)/2)
+test = -(train)
+mydat$BMXWT = as.numeric(mydat$BMXWT)
+mydat$BMXARML = as.numeric(mydat$BMXARML)
+mydat$BMXARMC = as.numeric(mydat$BMXARMC)
+mydat$PEASCTM1 = as.numeric(mydat$PEASCTM1)
+mydat$RIDAGEEX = as.numeric(mydat$RIDAGEEX)
+mydat$DMDHRAGE = as.numeric(mydat$DMDHRAGE)
+y = mydat$RIDAGEEX 
+y.test=y[test]
+x = model.matrix(RIDAGEEX~.,mydat)[,-1]
+cv.ridge.out = cv.glmnet(x[train,],y[train],alpha = 0)
+plot(cv.ridge.out)
+bestlam = cv.ridge.out$lambda.min
+bestlam
+ridge.pred = predict(cv.ridge.out,s=bestlam,newx=x[test,])
+mean((ridge.pred-y.test)^2) #49851.61
+
+#Lasso Regression
+cv.lasso.out = cv.glmnet(x[train,],y[train],alpha=1)
+plot(cv.lasso.out )
+bestlam1 = cv.lasso.out$lambda.min
+lasso.pred=predict(cv.lasso.out,s=bestlam1,newx=x[test,])
+mean((lasso.pred-y.test)^2) #49318.77
+out=glmnet(x,y,alpha=1)
+lasso.coef=predict(out,type="coefficients",s=bestlam1)
+lasso.coef[lasso.coef[,1]!=0,]
+
+#Random Forest
+rf = randomForest(RIDAGEEX~.,data = mydat,subset = train,importance = TRUE)
+yhat.rf = predict(rf, newdata = mydat[-train,])
+mean((yhat.rf-y.test)^2) #26979.02
+varImpPlot(rf)
+```
+
+# Problem 2: for parcipants 50 years and older, build a prediction model for the final mortality status, mortstat. 
+
+(1) Data Cleaning and Variable Selection:   
+* We selected subjects whose ages at examination are 50 years and older.  
+* We removed subjects that have missing response variable, mortstat, and then we removed variables that have more than 5% missing.
+* We removed subjects that have any missing cases by using R command, complete.cases.
+* There are 133 variables left after removing variables that have more than 5% missing. 
+* We removed the same 15 variables as in problem #1.
+* We want to check if the variables are related to the data collection or data release status, and therefore irrelevant to the final mortality status. We found that BAAEXSTS (Status of a MEC exam) and DR1EXMER (Interviewer ID code) are irrelevant to our response variable and we can excluse these variables from analysis.
+* We also excluded the variable DMDEDUC because it is the old version of education level and can be replaced by DMDEDUC2. Thus, we excluded 18 variables and there are 115 variables left, one of which is our response variable. 
+* Finally, we removed observations that answered "don't know" or "refused" to interview questions. There are 1176 observations left.
+
+```{r}
+library(e1071)
+library(gbm)
+dat = nhanes2003_2004
+dat$RIDAGEEX = as.numeric(dat$RIDAGEEX)
+#For parcipants 50 years and older (>=600 months)
+dat2 = filter(dat,RIDAGEEX>=600)
+dat2 =  dat2[!is.na(dat2$mortstat),]
+dat2 = dat2[,which(colMeans(is.na(dat2))<=0.05)]
+dat2 = dat2[complete.cases(dat2),] #133 variables
+mydat2 = dat2[,!(colnames(dat2)) %in% c("SEQN","BMDSTATS","PEASCST1","SDDSRVYR","RIDSTATR","RIDAGEYR","RIDAGEMN","RIDEXMON","WTINT2YR","WTMEC2YR","SDMVPSU","SDMVSTRA","DR1DRSTZ","DR2DRSTZ","HSAQUEX")] #119 variables
+colnames(mydat2)
+
+#check variables
+#1."BAAEXSTS":Status of a MEC exam (x)
+#2."BMXWT"
+#3."BMXHT":standing height
+#4."BMXBMI" 
+#5."BPQ010":About how long has it been since {you/SP} last had {your/his/her} blood pressure taken by a doctor or other health professional?
+#6."BPQ020":Ever told you had high blood pressure
+table(mydat2$BPQ020)
+mydat2 = mydat2[mydat2$BPQ020!=9,] #1547
+#7."BPQ060":Ever had blood cholesterol checked
+table(mydat2$BPQ060)
+mydat2 = mydat2[mydat2$BPQ060!=9,] #1512
+#8.DMDHRAGE:Age in years of the household reference person at the time of HH screening 
+#9."PEASCTM1":Blood Pressure Time in Seconds
+#10."BPQ150A": Have you had any of the following in the past 30 minutes?
+#11."BPQ150B":Have you had any of the following in the past 30 minutes?: Alcohol 
+#12."BPQ150C":Had coffee in the past 30 minutes? 
+#13. "BPQ150D":Had cigarettes in the past 30 minutes?
+#14."BPAARM":Arm selected
+table(mydat2$BPAARM)
+mydat2 = mydat2[mydat2$BPAARM!=8,]#1501
+#15."BPXPLS": 60 sec. pulse   
+#16."BPXPULS":Pulse regular or irregular?  
+#17."BPXPTY":pulse type   
+#18."RIAGENDR":gender
+#19. "RIDAGEEX": age in months at exam 
+#20. "RIDRETH1":Race/Ethnicity
+#21. "DMQMILIT": Did {you/SP} ever serve in the Armed Forces of the United States?
+#22. "DMDBORN":Country of Birth
+#23. "DMDCITZN":Citizenship Status
+#24. "DMDEDUC2":Education Level - Adults 20+
+mydat2 = mydat2[mydat2$DMDEDUC2!=7,] #1500
+#25."DMDEDUC": education (old version) (x)  
+#26. "DMDMARTL": Marital Status
+#27. "DMDHHSIZ":Total number of people in the Household 
+#28. "INDFMINC": Annual Family Income
+table(mydat2$INDFMINC)
+mydat2 = mydat2[!mydat2$INDFMINC%in%c(77,99),] #1484
+#29. "DMDHRGND":HH Ref Person Gender
+#30. "DMDHRBRN":HH Ref Person Country of Birth
+#31. "DMDHREDU":HH Ref Person Education Level
+table(mydat2$DMDHREDU)
+mydat2 = mydat2[!mydat2$DMDHREDU%in%c(7,9),] #1478
+#32. "DMDHRMAR":HH Ref Person Marital Status 
+table(mydat2$DMDHRMAR)
+#33. "SIALANG": Language of SP Interview  
+#34. "SIAPROXY": Proxy used in SP Interview? 
+#35. "SIAINTRP":Interpreter used in SP Interview? 
+#36. "FIALANG": Language of Family Interview
+#37. "FIAPROXY":Proxy used in Family Interview? 
+#38. "FIAINTRP":Interpreter used in Family Interview? 
+#39. "DIQ010": Doctor told you have diabetes
+#40. "DIQ050":Taking insulin now
+#41. "DIQ090":Ulcer/sore not healed within 4 weeks
+table(mydat2$DIQ090)
+mydat2 = mydat2[mydat2$DIQ090!=9,] #1476
+#42. "DIQ100":Numbness in hands/feet-past 3 mos
+table(mydat2$DIQ100)
+mydat2 = mydat2[mydat2$DIQ100!=9,] #1475
+#43. "DIQ120":Pain/tingling in hands/feet - past 3 mos
+#44. "DIQ140":Pain in either leg while walking
+table(mydat2$DIQ140)
+mydat2 = mydat2[mydat2$DIQ140!=9,] #1473
+#45. "DR1EXMER":Interviewer ID code (x) 
+#46. "DR1DAY":Intake day of week   
+#47. "DR1LANG":Language SP/Proxy used mostly  
+#48."DR1MNRSP":Main respondent for this interview
+#49. "DR1HELPD":Who helped in responding for this interview
+#50. "DBQ095Z": Type of salt you use 
+table(mydat2$DBQ095Z)
+mydat2 = mydat2[!mydat2$DBQ095Z%in%c(91,99),] #1457
+#51. "DRQSPREP":Salt used in preparation?
+table(mydat2$DRQSPREP)
+mydat2 = mydat2[mydat2$DRQSPREP!=9,] #1430
+#52. "DRQSDIET":On special diet?
+#53. "DR1_300":Compare food consumed yesterday to usual
+table(mydat2$DR1_300)
+mydat2 = mydat2[mydat2$DR1_300!=9,] #1429
+#54. "DR1_320":Total plain water drank yesterday (gm) 
+#55. "DR1_330":Total tap water drank yesterday (gm)
+#56."DR1BWATR":Total bottled water drank yesterday (gm)
+#57."DR1CWATR":Plain carbonated water (gm)
+#58. "LBXWBCSI":White blood cell count (1000 cells/uL)
+#59."LBXLYPCT": Lymphocyte percent (%) 
+#60."LBXMOPCT":Monocyte percent (%)
+#61. "LBXNEPCT":Segmented neutrophils percent (%)
+#62. "LBXEOPCT":Eosinophils percent (%) 
+#63."LBXBAPCT":Basophils percent (%) 
+#64."LBDLYMNO":Lymphocyte number 
+#65. "LBDMONO": Monocyte number
+#66. "LBDNENO":Segmented neutrophils number 
+#67. "LBDEONO":Eosinophils number
+#68."LBDBANO": Basophils number
+#69."LBXRBCSI":Red blood cell count (million cells/uL)
+#70."LBXHGB":Hemoglobin (g/dL)   
+#71."LBXHCT":Hematocrit (%)   
+#72."LBXMCVSI":Mean cell volume (fL)
+#73."LBXMCHSI":Mean cell hemoglobin (pg) 
+#74."LBXMC":Mean cell hemoglobin concentration (g/dL) 
+#75."LBXRDW":Red cell distribution width (%)   
+#76."LBXPLTSI":Platelet count SI (1000 cells/uL) 
+#77."LBXMPSI":Mean platelet volume (fL)  
+#78. "MCQ010": Ever been told you have asthma
+table(mydat2$MCQ010)
+mydat2 = mydat2[mydat2$MCQ010!=9,] #1427
+#79."MCQ053":Taking treatment for anemia/past 3 mos
+table(mydat2$MCQ053)
+mydat2 = mydat2[mydat2$MCQ053!=9,] #1426
+#80. "MCQ092":Ever receive blood transfusion
+table(mydat2$MCQ092)
+mydat2 = mydat2[mydat2$MCQ092!=9,] #1399
+#81."MCQ140":Trouble seeing even with glass/contacts 
+table(mydat2$MCQ140)
+mydat2 = mydat2[mydat2$MCQ140!=9,] #1397
+#82."MCQ160A":Doctor ever said you had arthritis 
+table(mydat2$MCQ160A)
+mydat2 = mydat2[mydat2$MCQ160A!=9,] #1394
+#83."MCQ160B":Ever told had congestive heart failure
+table(mydat2$MCQ160B)
+mydat2 = mydat2[mydat2$MCQ160B!=9,]#1387
+#84."MCQ160C":Ever told you had coronary heart disease
+table(mydat2$MCQ160C)
+mydat2 = mydat2[mydat2$MCQ160C!=9,] #1379
+#85."MCQ160D":Ever told you had angina/angina pectoris
+table(mydat2$MCQ160D)
+mydat2 = mydat2[mydat2$MCQ160D!=9,]#1376
+#86."MCQ160E":Ever told you had heart attack
+table(mydat2$MCQ160E)
+mydat2 = mydat2[!mydat2$MCQ160E%in%c(7,9),] #1373
+#87."MCQ160F":Ever told you had a stroke
+#88. "MCQ160G":Ever told you had emphysema
+table(mydat2$MCQ160G)
+mydat2 = mydat2[mydat2$MCQ160G!=9,] #1370
+#89. "MCQ160J":Doctor said you were overweight
+#90."MCQ160K":Ever told you had chronic bronchitis
+table(mydat2$MCQ160K)
+mydat2 = mydat2[mydat2$MCQ160K!=9,] #1369
+#91. "MCQ160L":Ever told you had any liver condition
+table(mydat2$MCQ160L)
+mydat2 = mydat2[mydat2$MCQ160L!=9,] #1366
+#92."MCQ160M":Ever told you had a thyroid problem
+table(mydat2$MCQ160M)
+mydat2 = mydat2[mydat2$MCQ160M!=9,]#1363
+#93."MCQ220":Ever told you had cancer or malignancy 
+table(mydat2$MCQ220)
+mydat2 = mydat2[mydat2$MCQ220!=9,] #1361
+#94."MCQ245A":Work days missed for illness/maternity
+#95."MCQ250A":Blood relatives have diabetes
+table(mydat2$MCQ250A)
+mydat2 = mydat2[mydat2$MCQ250A!=9,] #1342
+#96."MCQ250B":Blood relatives have Alzheimer's
+table(mydat2$MCQ250B)
+mydat2 = mydat2[mydat2$MCQ250B!=9,] #1334
+#97."MCQ250C":Blood relatives have asthma
+table(mydat2$MCQ250C)
+mydat2 = mydat2[mydat2$MCQ250C!=9,] #1318
+#98."MCQ250E":Blood relatives have osteoporosis
+table(mydat2$MCQ250E)
+mydat2 = mydat2[mydat2$MCQ250E!=9,] #1293
+#99."MCQ250F":Blood relatives w/hypertension/stroke 
+table(mydat2$MCQ250F)
+mydat2 = mydat2[mydat2$MCQ250F!=9,] #1252
+#100. "MCQ250G":Blood relatives have angina
+table(mydat2$MCQ250G)
+mydat2 = mydat2[mydat2$MCQ250G!=9,] #1240
+#101. "MCQ265": Blood relative have/had prostate cancer 
+table(mydat2$MCQ265)
+mydat2 = mydat2[mydat2$MCQ265!=9,]#1226
+#102. "MCQ270": Your mother ever fracture hip
+table(mydat2$MCQ270)
+mydat2 = mydat2[mydat2$MCQ270!=9,] #1206
+#103. "SSQ011":Anyone to help with emotional support
+#104."SSQ051":Anyone to help with financial support
+table(mydat2$SSQ051)
+mydat2 = mydat2[mydat2$SSQ051!=9,] #1195
+#105."SSQ061":Number of close friends
+mydat2 = mydat2[mydat2$SSQ061!=9999,]#1192
+#106."WHD010":Current self-reported height (inches)
+mydat2 = mydat2[mydat2$WHD010!=9999,]#1189
+#107."WHD020":Current self-reported weight (pounds)
+mydat2 = mydat2[mydat2$WHD020!=9999,]#1187
+#108."WHQ030":How do you consider your weight
+table(mydat2$WHQ030)
+mydat2 = mydat2[mydat2$WHQ030!=9,] #1186
+#109. "WHQ040":Like to weigh more, less or same
+#110."WHD050":Self-reported weight - 1 yr ago (pounds)
+#111. "WHQ090":   
+#112. "WHD110":Self-reported weight-10 yrs ago (pounds)  
+mydat2 = mydat2[!mydat2$WHD110%in%c(7777,9999),] #1184
+#113."WHD120":Self-reported weight-age 25 (pounds) 
+mydat2 = mydat2[!mydat2$WHD120%in%c(7777,9999),] #1179
+#114."WHD130":Self-reported height - age 25 (inches)
+mydat2 = mydat2[!mydat2$WHD130%in%c(7777,9999),] #1178
+#115."WHD140":Self-reported greatest weight (pounds) 
+#116."WHQ150":Age when heaviest weight
+mydat2 = mydat2[mydat2$WHQ150!=99999,]#1176
+
+mydat2 = mydat2[,!colnames(mydat2)%in%c("BAAEXSTS","DMDEDUC","DR1EXMER")] #115 variables
+```
+
+(2) Build a prediction model for the the final mortality status,mortstat.  
+* The response variable, the final mortality status, is a binary variable so I would like to use classification trees to fit the data.
+* We randomly splitted data into two halves, training data set and testing data set. We built a training model based on the training datsa set and tested the model using the testing data set.
+* Firstly, we built random forest classification trees and the testing error is 0.168. The results indicate that across all of the trees considered in the random forest,RIDAGEEX (age in months at exam),LBXRDW (Red cell distribution width),DMDHRAGE (Age of the household reference person at the time of HH screening), WHQ150 (Age when heaviest weight) and LBXPLTSI (Platelet count) are the top five most important variables for predicting the final mortality status.
+* We also fitted boosted classification trees to the training data set. We set the cutoff equals 0.5 and when the predicted probability is greater than 0.5, we assign the predicted value to be 1. The testing error is 0.172 which similar to the testing error of random forests. The results indicate that RIDAGEEX (age in months at exam),LBXPLTSI (Platelet count),LBXRDW (Red cell distribution width), INDFMINC(Annual Family Income) and LBXWBCSI(White blood cell count) are the top five most important variables for predicting the final mortality status. Combining the results from both random forests and boosting, we found that RIDAGEEX (age in months at exam),LBXPLTSI (Platelet count), and LBXRDW (Red cell distribution width) have high influence on the response variable, mortstat.
+```{r}
+#response variable 0 or 1
+table(mydat2$mortstat)
+mydat2$mortstat=as.factor(mydat2$mortstat)
+
+#convert factor to numeric values
+cols.num <- c("BMXWT","BMXHT","BMXBMI","DMDHRAGE","PEASCTM1","BPXPLS","RIDAGEEX","DR1_320","DR1_330","DR1BWATR","DR1CWATR","LBXWBCSI","LBXLYPCT","LBXMOPCT", "LBXNEPCT","LBXHGB","LBXHCT","LBXMCVSI","LBXMCHSI","LBXMC","LBXRDW","LBXPLTSI", "LBXMPSI","LBXEOPCT","LBXBAPCT","LBDLYMNO","LBDMONO","LBDNENO","LBDEONO","LBDBANO","LBXRBCSI", "SSQ061","WHD010","WHD020","WHD050","WHD110","WHD120","WHD130","WHD140","WHQ150")
+mydat2[cols.num] <- sapply(mydat2[cols.num],as.numeric)
+
+#method 1: random forests
+train = sample(1:nrow(mydat2),nrow(mydat2)/2)
+test = -train
+y = mydat2$mortstat 
+y.test=y[test]
+
+rf2 = randomForest(as.factor(mortstat)~.,data = mydat2,subset = train,importance = TRUE)
+yhat.rf = predict(rf2, newdata = mydat2[-train,])
+table(true=y.test,pred=yhat.rf) 
+(95+4)/(95+4+479+10) #0.168
+varImpPlot(rf2)
+
+#method 2:boost
+gbm.model = gbm(as.character(mortstat)~., data=mydat2[train,], shrinkage=0.01, distribution = "bernoulli", n.trees=5000)
+yhat.boost=predict(gbm.model,newdata=mydat2[-train,], n.trees=5000,type="response")
+boost.pred=rep(0,length(y.test))
+boost.pred[yhat.boost >.5]= 1
+table(true=y.test,pred=boost.pred) 
+(69+32)/(451+36+32+69)
+#0.172
+summary(gbm.model)
+```
+

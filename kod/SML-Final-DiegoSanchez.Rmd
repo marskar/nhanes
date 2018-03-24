@@ -1,0 +1,679 @@
+---
+title: "Statistical Machine Learning - Final Project"
+author: "Diego F Sanchez Martinez"
+date: "3/10/2018"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=60), tidy=TRUE)
+```
+
+```{r clean workspace, echo=FALSE}
+rm(list = ls())
+graphics.off()
+```
+
+##Goal.
+
+In this project, you are asked to analyse NHANES 2003-2004 data to predict the age and a 9-year survival status for all NHANES participants.
+
+1) Age prediction
+2) 9-year survival status prediction (Mortality).
+
+Exploring the NHANES200-2004 dataset. 
+
+###Data loading, general features and cleaning.
+
+```{r data loading, cache=TRUE}
+###Loading the R data file
+load("nhanes2003-2004.Rda")
+###Determining which rows have NAs
+NA.rows <- sort(unique (unlist (lapply (nhanes2003_2004, function (x) which (is.na (x))))))
+###Comparing dimension of the dataset and NA rows
+dim(nhanes2003_2004)
+length(NA.rows)
+```
+
+Every row in the NHANES data set has at least one NA value. Eliminating all NAs values is not an option.
+
+```{r columns NAs}
+###Exploring NA values by columns
+NA.columns <-sapply(nhanes2003_2004, function(x) sum(is.na(x)))
+###Number of columns with all missing values
+sum(NA.columns == 10122)
+###Number of columns with 1%, and 10% of missing values
+sum(NA.columns > 101)
+sum(NA.columns > 1012)
+cleanNHANES <- nhanes2003_2004
+###Cleaning NHANES dataset from uninformative variables
+cleanNHANES <- cleanNHANES[,-which(NA.columns == 10122)] #drop columns with all NAs
+###Give us variables with more than one factor levels.
+var.factor1 <- which(sapply(cleanNHANES, function(x) length(levels(x))) > 1)
+###CLeaning dataset from variables without enough levels (just one factor level)
+cleanNHANES <- cleanNHANES[,var.factor1]
+dim(cleanNHANES)
+```
+
+The `cleanNHANES` dataset was cleaned from uninformative variables: 1) all NAs values, 2) one factor level, and 3) `SEQN` variable, corresponding the respondent sequence number.
+
+This dataset can be further manipulated for Age and Mortality prediction.
+
+
+###1. Age Prediction.
+Output variable: `RIDAGEEX`.
+
+####1.1 Futher data preparation.
+
+
+```{r Age related variable preparation}
+ageCleanNHANES <- cleanNHANES
+###Handling NA values in the output variable.
+print(paste("Cases with RIDAGEEX equal to NA: ", sum(is.na(ageCleanNHANES$RIDAGEEX))))
+ageCleanNHANES <- ageCleanNHANES[which(complete.cases(ageCleanNHANES$RIDAGEEX)),]
+print("Dataset after cleaning NAs from RIDAGEEX:")
+dim(ageCleanNHANES)
+###Making RIDAGEEX as numeric
+ageCleanNHANES$RIDAGEEX <- as.numeric(as.character(ageCleanNHANES$RIDAGEEX))
+###Deleting other AGEs variables
+ageCleanNHANES <- ageCleanNHANES[,-which(names(ageCleanNHANES) %in% c("RIDAGEMN", "RIDAGEYR"))]
+###Selecting just complete cases to fit the models.
+ageNA.columns <-sapply(ageCleanNHANES, function(x) sum(is.na(x)))
+ageCleanNHANES <- ageCleanNHANES[ ,which(ageNA.columns == 0)]
+print("Cases and variables without NAs")
+dim(ageCleanNHANES)
+names(ageCleanNHANES)
+###Changing the variables with more than 5 factors as numeric
+ageCleanNHANES$DMDHHSIZ <- as.numeric(as.character(ageCleanNHANES$DMDHHSIZ))
+ageCleanNHANES$WTINT2YR <- as.numeric(as.character(ageCleanNHANES$WTINT2YR))
+ageCleanNHANES$WTMEC2YR <- as.numeric(as.character(ageCleanNHANES$WTMEC2YR))
+ageCleanNHANES$SDMVSTRA <- as.numeric(as.character(ageCleanNHANES$SDMVSTRA))
+###Variable DMDBORN has level 7 with 1 observation, this could be splitted in forms that can not be handled by the model. I recoded it as element of the less frequent variable
+table(ageCleanNHANES$DMDBORN)
+ageCleanNHANES$DMDBORN[ageCleanNHANES$DMDBORN == 7] <- 3
+table(ageCleanNHANES$DMDBORN)
+###After cleaning summary
+summary(ageCleanNHANES)
+###RIDSTATR variable became with one level after cleaning
+ageCleanNHANES <- subset(ageCleanNHANES, select = -RIDSTATR)
+```
+
+The `ageCleanNHANES` dataset contains only variables without NAs. The output variable `RIDAGEEX` was transformed to `numeric`, as well as all variables that have more than 5 levels. The remainder variables were conserved as `factor` as they are in the original NHANES dataset. If any of the variables had less than 2 factor levels, they were dropped. 
+This is a naive and agnostic approach based on the completeness of the variables. I selected this approach in order to maintain it simply. Further manipulation like replacing NAs will require analysis of every single variable, change the type according to the data type and make imputation analysing type and distribution of each one, all out of the scope of this course. Finally, I removed `RIDAGEMN` and `RIDAGEYR` because both variables contained age coded in other ways, so they would contain almost the same information we were asked for. 
+
+####1.2 Splitting the NHANES cleaned dataset in training and test sets.
+
+```{r age train test}
+set.seed(123)
+###SEQN sequential number ID is no more useful
+ageCleanNHANES <- subset(ageCleanNHANES, select = -SEQN)
+###Setting the training and test sets
+train <- sample(nrow(ageCleanNHANES), 2/3*nrow(ageCleanNHANES))
+ageCleanNHANES.train <- ageCleanNHANES[train, ]
+ageCleanNHANES.test <- ageCleanNHANES[-train, ]
+```
+
+
+####1.3 Models
+
+#####1.3.1. Linear model using LSE.
+
+```{r linear LSE fit, error=FALSE}
+###Linear model using least squares
+ageNHANES.lm.fit <- lm(RIDAGEEX ~ ., data = ageCleanNHANES.train)
+ageNHANES.lm.pred <- predict(ageNHANES.lm.fit, ageCleanNHANES.test) 
+lmMSE <- mean((ageCleanNHANES.test$RIDAGEEX - ageNHANES.lm.pred)^2) 
+paste("Linear model test MSE: ", lmMSE)
+```
+
+
+####1.3.2. Linear model using ridge.
+
+```{r ridge}
+###glmnet package
+require(glmnet)
+set.seed(123)
+###Model matrices
+train.matrix <- model.matrix(RIDAGEEX ~ ., data = ageCleanNHANES.train)
+test.matrix <- model.matrix(RIDAGEEX ~ ., data = ageCleanNHANES.test)
+grid <- 10 ^ seq(4, -2, length = 100)
+###Ridge regression, lambda by CV
+ageNHANES.ridge.fit <- glmnet(train.matrix, ageCleanNHANES.train$RIDAGEEX, alpha = 0, lambda = grid, thresh = 1e-12)
+cv.ridge <- cv.glmnet(train.matrix, ageCleanNHANES.train$RIDAGEEX, alpha = 0)
+bestlamda.ridge <- cv.ridge$lambda.min
+bestlamda.ridge
+###Prediction using ridge regression
+ageNHANES.ridge.pred <- predict(ageNHANES.ridge.fit, s = bestlamda.ridge, newx = test.matrix)
+ridgeMSE <- mean((ageCleanNHANES.test$RIDAGEEX - ageNHANES.ridge.pred)^2)
+paste("Ridge regression model test MSE: ", ridgeMSE)
+```
+
+
+####1.3.3. Linear model using lasso.
+
+```{r lasso}
+###lasso regression, lambda by CV
+ageNHANES.lasso.fit <- glmnet(train.matrix, ageCleanNHANES.train$RIDAGEEX, alpha = 1, lambda = grid, thresh = 1e-12)
+cv.lasso <- cv.glmnet(train.matrix, ageCleanNHANES.train$RIDAGEEX, alpha = 1)
+bestlamda.lasso <- cv.lasso$lambda.min
+bestlamda.lasso
+###Prediction using lasso regression
+ageNHANES.lasso.pred <- predict(ageNHANES.lasso.fit, s = bestlamda.lasso, newx = test.matrix)
+lassoMSE <- mean((ageCleanNHANES.test$RIDAGEEX - ageNHANES.lasso.pred)^2)
+paste("Lasso regression model test MSE: ", lassoMSE)
+#lasso.coef  <- predict(ageNHANES.lasso.fit, type = 'coefficients', s = bestlamda.lasso)
+```
+
+####1.3.4. Tree models.
+
+#####Using Boosting.
+
+```{r}
+require(gbm)
+set.seed(123)
+###Creating a vector of lambda values
+lambda <- 10^seq(-10, -0.1, by = 0.1)
+###Storage for training errors
+ageNHANES.train.errors <- rep(NA, length(lambda))
+ageNHANES.test.errors <- rep(NA, length(lambda))
+###Performing boosting on the training set
+for (i in 1:length(lambda)) {
+    boost.ageNHANES <- gbm(RIDAGEEX ~ ., data = ageCleanNHANES.train, distribution = "gaussian", n.trees = 100, shrinkage = lambda[i])
+    ###data for training errors
+    ageNHANES.pred.train <- predict(boost.ageNHANES, ageCleanNHANES.train, n.trees = 100)
+    ageNHANES.train.errors[i] <- mean((ageNHANES.pred.train - ageCleanNHANES.train$RIDAGEEX)^2)
+    ###data for test errors
+    ageNHANES.pred.test <- predict(boost.ageNHANES, ageCleanNHANES.test, n.trees = 100)
+    ageNHANES.test.errors[i] <- mean((ageNHANES.pred.test - ageCleanNHANES.test$RIDAGEEX)^2)
+}
+plot(lambda, ageNHANES.train.errors, type = "b", xlab = "Shrinkage values", ylab = "Training MSE", main = "Training MSE vs. Shrinkage", col = "orange")
+plot(lambda, ageNHANES.test.errors, type = "b", xlab = "Shrinkage values", ylab = "Test MSE", main = "Test MSE vs. Shrinkage", col = "green")
+###Minimum test error by boosting.
+paste("The lower test mean squared error using boosting is: ", boostMSE <- min(ageNHANES.test.errors))
+paste("Lambda for the lower error is: ", lambda[which.min(ageNHANES.test.errors)]) 
+```
+
+#####Using Bagging.
+
+```{r}
+require(randomForest)
+set.seed(123)
+bag.ageNHANES <- randomForest(RIDAGEEX ~ ., data = ageCleanNHANES.train, mtry = 18, ntree = 100, importance = T)
+ageNHANES.bag.pred <- predict(bag.ageNHANES, newdata = ageCleanNHANES.test)
+baggingMSE <- mean((ageCleanNHANES.test$RIDAGEEX - ageNHANES.bag.pred)^2)
+paste("Test MSE using bagging: ", baggingMSE)
+paste("Measures of Variable Importance")
+importance(bag.ageNHANES)
+```
+
+The MSEs for each model using my naive agnostic approach are as follow:
+
+```{r}
+ageMSEs <- c(lmMSE,ridgeMSE,lassoMSE,boostMSE, baggingMSE)
+names(ageMSEs) <- c("lm LSE", "ridge", "lasso","boosting", "bagging")
+ageMSEs
+```
+
+Bagging was the most accurate model, but it is the less interpretable at the same time.
+
+
+###2. 9-year Survival status prediction.
+
+Output variable: `mortstat`
+
+This is a classification problem, trying to predict mortality in the nhanes group by the next 9 years. Since, it is a new problem, I prepared the dataset from scratch for this setting.
+
+The first step was cleaning the data using the response variable and dropping all the dataset rows corresponding to the NAs data in `mortstat`. After that, I subsetted the dataset focusing on participants with 50 years or older using `RIDAGEYR`.
+
+```{r first data cleaning}
+###Preparing the response variable
+mortNHANES <- nhanes2003_2004
+mortNHANES$mortstat <- as.factor(mortNHANES$mortstat)
+###Deleting row corresponding to mortstat == NA
+print(paste("Cases with mortstat equal to NA: ", sum(is.na(mortNHANES$mortstat))))
+mortNHANES <- mortNHANES[which(complete.cases(mortNHANES$mortstat)), ]
+dim(mortNHANES)
+###Subsetting the dataset for participants >= 50 years old.
+mortNHANES$RIDAGEYR <- as.numeric(as.character(mortNHANES$RIDAGEYR))
+mortNHANES <- mortNHANES[which(mortNHANES$RIDAGEYR >= 50),]
+dim(mortNHANES)
+###Exploring NA values by columns
+mort.NA.columns <-sapply(mortNHANES, function(x) sum(is.na(x)))
+###Number of columns with all missing values
+sum(mort.NA.columns == nrow(mortNHANES))
+###Number of columns with more than 10%, 20%, 50%, 80% and 90% of missing values
+sum(mort.NA.columns >= 0.1*nrow(mortNHANES))
+sum(mort.NA.columns >= 0.2*nrow(mortNHANES))
+sum(mort.NA.columns >= 0.5*nrow(mortNHANES))
+sum(mort.NA.columns >= 0.8*nrow(mortNHANES))
+sum(mort.NA.columns >= 0.9*nrow(mortNHANES))
+```
+
+####2.1 Futher data preparation.
+
+In this classification problem I am going to apply a slightly different approach from the age problem. It is still going to be an agnostic approach in the sense that I will not explore every variable in order to choose those that can be the most related to the mortality problem. Comparing to the previous age problem, this time I am going to drop variables having more than 20 percent of NAs values. For the remaining variables I will drop them if they have less than two levels (uninformative variables). For the final group I will try imputation as follow: 1) If the variable has more than 5 levels, it will be treated as numeric and the NA values will be replaced by the median of such variable. 2) If the variable has up to 5 levels, it will be managed as factor and the NA values will be replaced by -1 as a new category. 
+
+```{r second data cleaning}
+###Dropping columns with more than 10% of NAs
+mortNHANES <- mortNHANES[ ,!(mort.NA.columns >= 0.10*nrow(mortNHANES))]
+dim(mortNHANES)
+###Changing to integers variables with levels larger than 5.
+mortNHANESdf = mortNHANES
+var.levels <- which(sapply(mortNHANES, function(x) length(levels(x))) > 5)
+mortNHANESdf[ ,var.levels] <- lapply(mortNHANESdf[,var.levels], function(x) as.numeric(as.character(x)))
+
+###numeric imputation: NA = median
+mortNHANESdf[,var.levels] <- lapply(mortNHANESdf[,var.levels], function(x) {
+var.median <- median(x, na.rm = TRUE)
+x <- ifelse(is.na(x),var.median,x)
+})
+
+###factor imputation: NA = 0
+var.factor <- which(sapply(mortNHANESdf, function(x) is.factor(x)))
+mortNHANESdf[ ,var.factor] <- lapply(mortNHANESdf[,var.factor], function(x) as.numeric(as.character(x)))
+mortNHANESdf[,var.factor] <- lapply(mortNHANESdf[,var.factor], function(x) {
+x <- ifelse(is.na(x),0,x)
+})
+mortNHANESdf[ ,var.factor] <- lapply(mortNHANESdf[,var.factor], function(x) as.factor(x))
+
+###Deleting uninformative variables: one-level variable, ID (SEQN), survey weights
+var.mort.factor1 <- which(sapply(mortNHANESdf, function(x) length(levels(x))) == 1)
+mortNHANESdf <- mortNHANESdf[,-var.mort.factor1]
+mortNHANESdf <- subset(mortNHANESdf, select = -c(SEQN, WTINT2YR, WTMEC2YR))
+
+###Reassigning factors with elements < 9. These variables have high probability to be splitted unevenly between the training and test sets, generating prediction problems.
+mortNHANESdf$BPQ020[mortNHANESdf$BPQ020 == 0] <- 9 #Reassigning level 0 to level 9
+mortNHANESdf$BPQ020<- droplevels(mortNHANESdf)$BPQ020
+mortNHANESdf$DMQMILIT[mortNHANESdf$DMQMILIT == 7] <- 1 #Reassigning level 7 to level 1
+mortNHANESdf$DMQMILIT<- droplevels(mortNHANESdf)$DMQMILIT
+mortNHANESdf$DMDBORN[mortNHANESdf$DMDBORN == 7] <- 2 #Reassigning level 7 to level 2
+mortNHANESdf$DMDBORN<- droplevels(mortNHANESdf)$DMDBORN
+mortNHANESdf$DMDCITZN[mortNHANESdf$DMDCITZN == 7] <- 2 #Reassigning level 7 to level 2
+mortNHANESdf$DMDCITZN<- droplevels(mortNHANESdf)$DMDCITZN
+mortNHANESdf$DMDEDUC[mortNHANESdf$DMDEDUC == 7] <- 9 #Reassigning level 7 to level 9
+mortNHANESdf$DMDEDUC<- droplevels(mortNHANESdf)$DMDEDUC
+mortNHANESdf$DIQ090[mortNHANESdf$DIQ090 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$DIQ090<- droplevels(mortNHANESdf)$DIQ090
+mortNHANESdf$DIQ100[mortNHANESdf$DIQ100 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$DIQ100<- droplevels(mortNHANESdf)$DIQ100
+mortNHANESdf$DIQ120[mortNHANESdf$DIQ120 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$DIQ120<- droplevels(mortNHANESdf)$DIQ120
+mortNHANESdf$DIQ140[mortNHANESdf$DIQ140 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$DIQ140<- droplevels(mortNHANESdf)$DIQ140
+mortNHANESdf$MCQ010[mortNHANESdf$MCQ010 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$MCQ010<- droplevels(mortNHANESdf)$MCQ010
+mortNHANESdf$MCQ140[mortNHANESdf$MCQ140 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$MCQ140<- droplevels(mortNHANESdf)$MCQ140
+mortNHANESdf$MCQ053[mortNHANESdf$MCQ053 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$MCQ053<- droplevels(mortNHANESdf)$MCQ053
+mortNHANESdf$MCQ160E[mortNHANESdf$MCQ160E == 7] <- 9 #Reassigning level 7 to level 9
+mortNHANESdf$MCQ160E<- droplevels(mortNHANESdf)$MCQ160E
+mortNHANESdf$MCQ160F[mortNHANESdf$MCQ160F == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$MCQ160F<- droplevels(mortNHANESdf)$MCQ160F
+mortNHANESdf$DIQ010[mortNHANESdf$DIQ010 == 9] <- 3 #Reassigning level 9 to level 3
+mortNHANESdf$DIQ010<- droplevels(mortNHANESdf)$DIQ010
+mortNHANESdf$MCQ160J[mortNHANESdf$MCQ160J == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$MCQ160J<- droplevels(mortNHANESdf)$MCQ160J
+mortNHANESdf$MCQ160K[mortNHANESdf$MCQ160K == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$MCQ160K<- droplevels(mortNHANESdf)$MCQ160K
+mortNHANESdf$MCQ160L[mortNHANESdf$MCQ160L == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$MCQ160L<- droplevels(mortNHANESdf)$MCQ160L
+mortNHANESdf$MCQ220[mortNHANESdf$MCQ220 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$MCQ220<- droplevels(mortNHANESdf)$MCQ220
+mortNHANESdf$MCQ270[mortNHANESdf$MCQ270 == 7] <- 9 #Reassigning level 7 to level 9
+mortNHANESdf$MCQ270[mortNHANESdf$MCQ270 == 0] <- 9 #Reassigning level 0 to level 9
+mortNHANESdf$MCQ270<- droplevels(mortNHANESdf)$MCQ270
+mortNHANESdf$SSQ011[mortNHANESdf$SSQ011 == 9] <- 3 #Reassigning level 9 to level 3
+mortNHANESdf$SSQ011<- droplevels(mortNHANESdf)$SSQ011
+mortNHANESdf$WHQ040[mortNHANESdf$WHQ040 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$WHQ040<- droplevels(mortNHANESdf)$WHQ040
+mortNHANESdf$WHQ090[mortNHANESdf$WHQ090 == 9] <- 1 #Reassigning level 9 to level 1
+mortNHANESdf$WHQ090<- droplevels(mortNHANESdf)$WHQ090
+###Drop unused levels on certain variables
+mortNHANESdf$DR1DRSTZ<- droplevels(mortNHANESdf)$DR1DRSTZ
+mortNHANESdf$DR2DRSTZ<- droplevels(mortNHANESdf)$DR2DRSTZ
+mortNHANESdf$MCQ265<- droplevels(mortNHANESdf)$MCQ265
+mortNHANESdf$WHQ030<- droplevels(mortNHANESdf)$WHQ030
+
+###Final dataset dimensions
+dim(mortNHANESdf)
+```
+
+####2.2 Splitting the NHANES cleaned dataset in training and test sets.
+
+```{r splitting}
+###Setting the training and test sets
+set.seed(2345)
+train <- sample(nrow(mortNHANESdf), 2/3*nrow(mortNHANESdf))
+mortNHANESdf.train <- mortNHANESdf[train, ]
+mortNHANESdf.test <- mortNHANESdf[-train, ]
+```
+
+####2.3 Models
+
+The response variable is `mortstat`, which indicates the status `(1 = deceased, 0 = alive)` of a participant in the next 9 years. From our cleaned data we know that the porcentage of deceased participants is around 27%. If we always predict our outcome as "No", we will have around the 27% of error test. So, our classifier has to improve that but, most important, we are interested to predict the true deceased participants. 
+
+In this case, the overall _test error rate_ is less important than the _Test precision_ and the the _True positive rate_. The _test precision_ is defined as the ratio between the _true positives_ and the total number of cases predicted as `TRUE` by the classifier, so it gives you the rate of succesfully `Yes` or `true` predicted cases. The _True positive rate_ is defined as the ratio between the _true positives_ and the total number of _actual or real_ `TRUE` _cases_.
+
+Finally, depending on the aplication, one would be more interested in _Test precision_ or _True positive rate_, therefore I reported both in addition to the _Test error_ in the models.
+ 
+```{r}
+sum(mortNHANESdf$mortstat == 1) / length(mortNHANESdf$mortstat)
+sum(mortNHANESdf.train$mortstat == 1) / length(mortNHANESdf.train$mortstat)
+sum(mortNHANESdf.test$mortstat == 1) / length(mortNHANESdf.test$mortstat)
+```
+
+
+
+####2.3.1. Logistic regression.
+
+Fitting the logistic model using the validation set approach.
+
+```{r logistic validation set, error = TRUE}
+###fitting model
+mortNHANESdf.logistic.fit <- glm(mortstat ~ ., data = mortNHANESdf.train, family = "binomial")
+#summary(mortNHANESdf.logistic.fit)
+###making prediction
+logistic.probs <- predict(mortNHANESdf.logistic.fit, newdata = mortNHANESdf.test, type = "response") 
+pred.logistic.fit <- rep(0, length(logistic.probs))
+pred.logistic.fit[logistic.probs > 0.5] <- 1
+###validation test error
+tab.fit <- table(mortNHANESdf.test$mortstat, pred.logistic.fit, dnn= c("Test", "Predicted"))
+tab.fit
+logic1.error <- mean(pred.logistic.fit != mortNHANESdf.test$mortstat)
+paste("Test error rate: ", logic1.error)
+precision.logic1 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+paste("Test precision is: ", precision.logic1)
+TPR.logic1 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.logic1)
+
+###Validation test error rate using a different prediction cut-off
+# Yes prob > 0.75
+pred.logistic.fit <- rep(0, length(logistic.probs))
+pred.logistic.fit[logistic.probs > 0.75] <- 1
+tab.fit <- table(mortNHANESdf.test$mortstat, pred.logistic.fit, dnn= c("Test", "Predicted"))
+tab.fit
+logic2.error <- mean(pred.logistic.fit != mortNHANESdf.test$mortstat)
+paste("Test error rate: ", logic2.error)
+precision.logic2 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+paste("Test precision is: ", precision.logic2)
+TPR.logic2 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.logic2)
+
+# Yes prob > 0.25
+pred.logistic.fit <- rep(0, length(logistic.probs))
+pred.logistic.fit[logistic.probs > 0.25] <- 1
+tab.fit <- table(mortNHANESdf.test$mortstat, pred.logistic.fit, dnn= c("Test", "Predicted"))
+tab.fit
+logic3.error <- mean(pred.logistic.fit != mortNHANESdf.test$mortstat)
+paste("Test error rate: ", logic3.error)
+precision.logic3 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+paste("Test precision is: ", precision.logic3)
+TPR.logic3 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.logic3)
+```
+
+
+####2.3.2. Linear discriminant analysis.
+
+```{r error=TRUE}
+require(MASS)
+###LDA model
+mortNHANESdf.LDA.fit <- lda(mortstat ~ ., data = mortNHANESdf.train)
+mortNHANESdf.LDA.pred <- predict(mortNHANESdf.LDA.fit, newdata = mortNHANESdf.test$mortstat)
+mortNHANESdf.LDA.class <- mortNHANESdf.LDA.pred$class
+table(mortNHANESdf.LDA.class, mortNHANESdf.test$mortstat)
+mean(mortNHANESdf.LDA.class == mortNHANESdf.test$mortstat)
+```
+
+LDA model cannot be fitted because there are collinearity among some variables in the model. Further investigation and variable selection is needed.
+
+
+####2.3.3. KNN classifiers.
+
+Merging different variables (categorical vs. continuous) with certain difficulties to define a distance. So for this approach I decided to change all variables to continuous.
+The numerical data are in very different scales since I change some of the factor variables to integer if the length was greater than 5. So, comparing a previous six level variable to an age variable, the latter will drive the classifier.
+To avoid such situation I scaled the numeric predictors before applying the classifier. Resuming all variables are expressed as continuous and are scaled.
+
+```{r standardizing numerical predictors}
+###Categorical to numeric variables
+mortNHANESdf.standard = mortNHANESdf
+var.factor <- which(sapply(mortNHANESdf.standard, function(x) is.factor(x)))
+mortNHANESdf.standard[ ,var.factor] <- lapply(mortNHANESdf.standard[,var.factor], function(x) as.numeric(as.character(x)))
+###Standardizing predictors
+mortNHANESdfsd <- scale(subset(mortNHANESdf.standard, select = -mortstat))
+###Setting the training and test sets
+set.seed(2345)
+train <- sample(nrow(mortNHANESdfsd), 2/3*nrow(mortNHANESdfsd))
+mortNHANESdfsd.train <- mortNHANESdfsd[train, ]
+mortNHANESdfsd.test <- mortNHANESdfsd[-train, ]
+Y.mortstat <- mortNHANESdf.standard$mortstat
+train.Y <- mortNHANESdf.standard$mortstat[train]
+test.Y <- mortNHANESdf.standard$mortstat[-train]
+```
+
+Building the KNN classifiers, and reporting the _Test error rate, precision, and true positive rate.
+
+```{r KNN classifiers}
+###Applying the classifier using k= 1 to 20.
+require(class)
+set.seed(2345)
+results.knn <- data.frame(k = 1:20, error.rate = NA, precisions = NA, TPRs = NA)
+for (k in 1:20) {
+  pred <- knn(train = mortNHANESdfsd.train, test = mortNHANESdfsd.test,
+              cl = train.Y, k = k)
+  results.knn[k, 2] <- mean(pred != test.Y)
+  tab.fit <- table(test.Y, pred)
+  results.knn[k, 3] <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+  results.knn[k, 4] <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+}
+print(results.knn)
+```
+
+
+####2.3.4. Support Vector Machine.
+
+
+```{r svm classifier}
+require(e1071)
+set.seed(2345)
+###Splitting training and test set.
+svmNHANES <- mortNHANESdf.standard
+svmNHANES$mortstat <- as.factor(svmNHANES$mortstat)
+train <- sample(nrow(svmNHANES), 2/3*nrow(svmNHANES))
+svm.train <- svmNHANES[train,]
+svm.test <- svmNHANES[-train,]
+###SVM tunning, linear
+svm.tune.linear = tune(svm, mortstat ~ ., data = svm.train, kernel = "linear",
+                       ranges = list(cost = c(0.01, 0.1, 1, 10, 100)))
+summary(svm.tune.linear)
+```
+
+Computing test error, precision, and true positive rates for the best cost parameter and some extreme values.
+
+```{r best svm}
+set.seed(2345)
+###SVM using best cost by CV
+best.svm.linear <- svm(mortstat ~ ., kernel = "linear", data = svm.train, cost = svm.tune.linear$best.parameter$cost)
+###Computing test error
+best.svm.pred <- predict(best.svm.linear, svm.test)
+best.tab.fit <- table(svm.test$mortstat, best.svm.pred, dnn= c("Test", "Predicted"))
+best.tab.fit
+svm.error <- mean(best.svm.pred != svm.test$mortstat)
+paste("Test error rate: ", svm.error)
+precision.svm <- best.tab.fit[2,2]/(best.tab.fit[2,2]+best.tab.fit[1,2])
+paste("Test precision is: ", precision.svm)
+TPR.svm <- best.tab.fit[2,2]/(best.tab.fit[2,2]+best.tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.svm)
+
+###SVM using cost = 0.01
+svm.linear <- svm(mortstat ~ ., kernel = "linear", data = svm.train, cost = 0.01)
+###Computing test error
+svm.pred <- predict(svm.linear, svm.test)
+tab.fit <- table(svm.test$mortstat, svm.pred, dnn= c("Test", "Predicted"))
+tab.fit
+svm.error2 <- mean(svm.pred != svm.test$mortstat)
+paste("Test error rate: ", svm.error2)
+precision.svm2 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+paste("Test precision is: ", precision.svm2)
+TPR.svm2 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.svm2)
+
+###SVM using cost = 100
+svm.linear <- svm(mortstat ~ ., kernel = "linear", data = svm.train, cost = 100)
+###Computing test error
+svm.pred <- predict(svm.linear, svm.test)
+tab.fit <- table(svm.test$mortstat, svm.pred, dnn= c("Test", "Predicted"))
+tab.fit
+svm.error3 <- mean(svm.pred != svm.test$mortstat)
+paste("Test error rate: ", svm.error3)
+precision.svm3 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+paste("Test precision is: ", precision.svm3)
+TPR.svm3 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.svm3)
+```
+
+All the models performed almost the same.
+
+####2.3.5. Tree classifiers.
+
+I begun fitting a simple tree, using all the variables as predictors. For this setting, I splitted the dataset with scaled predictors in a training and test sets.
+
+```{r}
+set.seed(2345)
+###Splitting
+treeNHANES <- mortNHANESdf.standard
+treeNHANES$mortstat <- as.factor(treeNHANES$mortstat)
+train <- sample(nrow(treeNHANES), 2/3*nrow(treeNHANES))
+tree.train <- treeNHANES[train,]
+tree.test <- treeNHANES[-train,]
+###Tree-based classification
+require(tree)
+tree.fit <- tree(mortstat ~ . , data = tree.train)
+summary(tree.fit)
+tree.pred <- predict(tree.fit, tree.test, type="class")
+tab.fit <- table(tree.test$mortstat, tree.pred, dnn= c("Test", "Predicted"))
+tab.fit
+tree.error <- mean(tree.pred != tree.test$mortstat)
+paste("Test error rate: ", tree.error)
+precision.tree <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+paste("Test precision is: ", precision.tree)
+TPR.tree <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.tree)
+```
+
+I proceeded to prune the tree using cross-validation in order to determine the optimal level of tree complexity that might lead to improved results.
+
+```{r}
+set.seed (2345)
+###Pruning the tree
+cv.trees =cv.tree(tree.fit, FUN=prune.misclass )
+cv.trees
+###Refitting the tree
+prune.tree=prune.misclass(tree.fit, best=2)
+###Predictions
+tree.pred <- predict(prune.tree, tree.test, type="class")
+tab.fit <- table(tree.test$mortstat, tree.pred, dnn= c("Test", "Predicted"))
+tab.fit
+tree.error2 <- mean(tree.pred != tree.test$mortstat)
+paste("Test error rate: ", tree.error2)
+precision.tree2 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+paste("Test precision is: ", precision.tree2)
+TPR.tree2 <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.tree2)
+```
+
+The pruned tree obtained by cross-validation perform better than the first tree. 
+
+Finally, I used the random forest technique to build my last prediction model.
+
+```{r random forrest classification}
+set.seed(2345)
+require(randomForest)
+###Fitting the model with the previous splitted data sqrt(variables) ~ 9
+randForest.fit <- randomForest(mortstat ~ . , data = tree.train, mtry=9, importance =TRUE)
+###Making prediction
+randForest.pred <- predict(randForest.fit, tree.test)
+tab.fit <- table(tree.test$mortstat, randForest.pred, dnn= c("Test", "Predicted"))
+tab.fit
+randForest.error <- mean(randForest.pred != tree.test$mortstat)
+paste("Test error rate: ", randForest.error)
+precision.randForest <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[1,2])
+paste("Test precision is: ", precision.randForest)
+TPR.randForest <- tab.fit[2,2]/(tab.fit[2,2]+tab.fit[2,1])
+paste("The True Positive Rate is: ", TPR.randForest)
+```
+
+####2.3.6. The classification error, precision, and true positive rates by model are as follows:
+
+For logistic regression.
+```{r}
+rates1 <- as.matrix(rep("", 14))
+rates1[1] = ("Yes prob > 0.5")
+rates1[2] =paste("Test error rate: ", logic1.error)
+rates1[3] =paste("Test precision is: ", precision.logic1)
+rates1[4] =paste("The True Positive Rate is: ", TPR.logic1)
+rates1[5] =""
+rates1[6] =("Yes prob > 0.75")
+rates1[7] =paste("Test error rate: ", logic2.error)
+rates1[8] =paste("Test precision is: ", precision.logic2)
+rates1[9] =paste("The True Positive Rate is: ", TPR.logic2)
+rates1[10] = ""
+rates1[11] =("Yes prob > 0.25")
+rates1[12] =paste("Test error rate: ", logic3.error)
+rates1[13] =paste("Test precision is: ", precision.logic3)
+rates1[14] =paste("The True Positive Rate is: ", TPR.logic3)
+print(rates1)
+```
+
+For KNN classifiers by K = 1 to 20.
+```{r}
+print(results.knn)
+```
+
+For Supporting Vector Machines.
+```{r}
+rates2 <- as.matrix(rep("", 14))
+rates2[1] =("SVM using best cost = 0.1 by CV")
+rates2[2] =paste("Test error rate: ", svm.error)
+rates2[3] =paste("Test precision is: ", precision.svm)
+rates2[4] =paste("The True Positive Rate is: ", TPR.svm)
+rates2[5] =""
+rates2[6] =("SVM using cost = 0.01")
+rates2[7] =paste("Test error rate: ", svm.error2)
+rates2[8] =paste("Test precision is: ", precision.svm2)
+rates2[9] =paste("The True Positive Rate is: ", TPR.svm2)
+rates2[10] =""
+rates2[11] =("SVM using cost = 100")
+rates2[12] =paste("Test error rate: ", svm.error3)
+rates2[13] =paste("Test precision is: ", precision.svm3)
+rates2[14] =paste("The True Positive Rate is: ", TPR.svm3)
+print(rates2)
+```
+
+For Tree-based classifiers.
+```{r}
+rates3 <- as.matrix(rep("", 14))
+rates3[1] =("Simple tree")
+rates3[2] =paste("Test error rate: ", tree.error)
+rates3[3] =paste("Test precision is: ", precision.tree)
+rates3[4] =paste("The True Positive Rate is: ", TPR.tree)
+rates3[5] =""
+rates3[6] =("Best pruned tree")
+rates3[7] =paste("Test error rate: ", tree.error2)
+rates3[8] =paste("Test precision is: ", precision.tree2)
+rates3[9] =paste("The True Positive Rate is: ", TPR.tree2)
+rates3[10] =""
+rates3[11] =("Random Forest")
+rates3[12] =paste("Test error rate: ", randForest.error)
+rates3[13] =paste("Test precision is: ", precision.randForest)
+rates3[14] =paste("The True Positive Rate is: ", TPR.randForest)
+print(rates3)
+```
+
+Finally, for this classification problem all models performed almost the same. It is worthy to mention that the Best pruned tree model got a high precision and true positive rate at the same time. For the other models, the overall error was almost the same, so, choosing a model for prediction will depend on the interest and respective application.
+
+Comments about the project. There are a lot of posible models and one have to deal between improving the prediction or has maintain the interpretability. Personally, this was my first deep contact with machine learning and I learned a lot. This course gave me an overview and showed me how complex is the field. As a side note, one of the most difficult things was dealing with real data and NAs, a course on data cleaning is definetely on my schedule.
