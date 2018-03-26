@@ -9,6 +9,7 @@
 # ignore data and literature folders to keep repo size manageable (backed up by Google drive)
 dat/
 lit/
+raw/
 
 # ignore Google files (backed up by Google drive)
 *.gdoc
