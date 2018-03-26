@@ -6,7 +6,7 @@ author:
 - Martin Skarzynski
 - Prof. Elizabeth Platz
 institute: Johns Hopkins School of Public Health
-date: "`r Sys.Date()`"
+date: "2018-03-26"
 output:
   word_document:
     reference_docx: style_nhanes.docx
@@ -16,10 +16,21 @@ csl: biomed-central.csl
 
 This is a test.
 IF it works x should be equal to 5 below.
-x=`r 10-5`
+x=5
 
 This is a table:
 
-`r knitr::kable(head(mtcars[, 1:5]), format = "markdown")`
+
+
+|                  |  mpg| cyl| disp|  hp| drat|
+|:-----------------|----:|---:|----:|---:|----:|
+|Mazda RX4         | 21.0|   6|  160| 110| 3.90|
+|Mazda RX4 Wag     | 21.0|   6|  160| 110| 3.90|
+|Datsun 710        | 22.8|   4|  108|  93| 3.85|
+|Hornet 4 Drive    | 21.4|   6|  258| 110| 3.08|
+|Hornet Sportabout | 18.7|   8|  360| 175| 3.15|
+|Valiant           | 18.1|   6|  225| 105| 2.76|
+
+
 
 
