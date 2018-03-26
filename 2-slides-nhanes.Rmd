@@ -4,8 +4,7 @@ subtitle: Multidimensional Analysis of Potential Cancer Mortality Risk Factors i
 author:
 - Martin Skarzynski
 - Prof. Elizabeth Platz
-institute: Johns Hopkins School of Public Health
-date: March 23, 2018
+date: "`r Sys.Date()`"
 ---
 
 # Goal

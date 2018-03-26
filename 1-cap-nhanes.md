@@ -21,7 +21,6 @@ x=5
 This is a table:
 
 
-
 |                  |  mpg| cyl| disp|  hp| drat|
 |:-----------------|----:|---:|----:|---:|----:|
 |Mazda RX4         | 21.0|   6|  160| 110| 3.90|
@@ -33,4 +32,21 @@ This is a table:
 
 
 
+This is a chunk (not included).
 
+
+This is another chunk (included).
+
+```r
+x=5
+x
+```
+
+```
+## [1] 5
+```
+
+This is a list
+- item1
+- item2
+- item3

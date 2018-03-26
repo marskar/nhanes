@@ -19,7 +19,21 @@ IF it works x should be equal to 5 below.
 x=`r 10-5`
 
 This is a table:
-
 `r knitr::kable(head(mtcars[, 1:5]), format = "markdown")`
 
+This is a chunk (not included).
+```{r include = FALSE}
+x=5
+x
+```
 
+This is another chunk (included).
+```{r include = TRUE}
+x=5
+x
+```
+
+This is a list
+- item1
+- item2
+- item3
