@@ -1,0 +1,289 @@
+    FILENAME YOUTHK "D:\Questionnaire\DAT\YOUTHK.DAT" LRECL=340;
+    *** LRECL includes 2 positions for CRLF, assuming use of PC SAS;
+
+    DATA WORK;
+      INFILE YOUTHK MISSOVER;
+
+      LENGTH
+        SEQN      7
+        HYK1A     3
+        HYK1B     3
+        HYK2A     3
+        HYK2B     3
+        HYK3CG    3
+        HYK3DG    3
+        HYK6SG    4
+        HYK8SG    4
+        HYK3CH    3
+        HYK3DH    3
+        HYK6SH    4
+        HYK8SH    4
+        HYK3CI    3
+        HYK3DI    3
+        HYK6SI    4
+        HYK8SI    4
+        HYK3CJ    3
+        HYK3DJ    3
+        HYK6SJ    4
+        HYK8SJ    4
+        HYK3CK    3
+        HYK3DK    3
+        HYK6SK    4
+        HYK8SK    4
+        HYK3CL    3
+        HYK3DL    3
+        HYK6SL    4
+        HYK8SL    4
+        HYK3CM    3
+        HYK3DM    3
+        HYK6SM    4
+        HYK8SM    4
+        HYK3CN    3
+        HYK3DN    3
+        HYK6SN    4
+        HYK8SN    4
+        HYK3CO    3
+        HYK3DO    3
+        HYK6SO    4
+        HYK8SO    4
+        HYK3CP    3
+        HYK3DP    3
+        HYK6SP    4
+        HYK8SP    4
+        HYK9DG    4
+        HYK9EG    4
+        HYK9FG    4
+        HYK11AG  $6
+        HYK12SG   4
+        HYK9DH    4
+        HYK9EH    4
+        HYK9FH    4
+        HYK11AH  $6
+        HYK12SH   4
+        HYK9DI    4
+        HYK9EI    4
+        HYK9FI    4
+        HYK11AI  $6
+        HYK12SI   4
+        HYK9DJ    4
+        HYK9EJ    4
+        HYK9FJ    4
+        HYK11AJ  $6
+        HYK12SJ   4
+        HYK9DK    4
+        HYK9EK    4
+        HYK9FK    4
+        HYK11AK  $6
+        HYK12SK   4
+        HYK9DL    4
+        HYK9EL    4
+        HYK9FL    4
+        HYK11AL  $6
+        HYK12SL   4
+        HYK9DM    4
+        HYK9EM    4
+        HYK9FM    4
+        HYK11AM  $6
+        HYK12SM   4
+        HYK9DN    4
+        HYK9EN    4
+        HYK9FN    4
+        HYK11AN  $6
+        HYK12SN   4
+        HYK9DO    4
+        HYK9EO    4
+        HYK9FO    4
+        HYK11AO  $6
+        HYK12SO   4
+      ;
+
+      FORMAT
+      ;
+
+     INPUT
+        SEQN     1-5
+        HYK1A    6
+        HYK1B    7
+        HYK2A    8-9
+        HYK2B    10-11
+        HYK3CG   12-13
+        HYK3DG   14-15
+        HYK6SG   16-19
+        HYK8SG   20-23
+        HYK3CH   24-25
+        HYK3DH   26-27
+        HYK6SH   28-31
+        HYK8SH   32-35
+        HYK3CI   36-37
+        HYK3DI   38-39
+        HYK6SI   40-43
+        HYK8SI   44-47
+        HYK3CJ   48-49
+        HYK3DJ   50-51
+        HYK6SJ   52-55
+        HYK8SJ   56-59
+        HYK3CK   60-61
+        HYK3DK   62-63
+        HYK6SK   64-67
+        HYK8SK   68-71
+        HYK3CL   72-73
+        HYK3DL   74-75
+        HYK6SL   76-79
+        HYK8SL   80-83
+        HYK3CM   84-85
+        HYK3DM   86-87
+        HYK6SM   88-91
+        HYK8SM   92-95
+        HYK3CN   96-97
+        HYK3DN   98-99
+        HYK6SN   100-103
+        HYK8SN   104-107
+        HYK3CO   108-109
+        HYK3DO   110-111
+        HYK6SO   112-115
+        HYK8SO   116-119
+        HYK3CP   120-121
+        HYK3DP   122-123
+        HYK6SP   124-127
+        HYK8SP   128-131
+        HYK9DG   132-135
+        HYK9EG   136-139
+        HYK9FG   140-143
+        HYK11AG  144-149
+        HYK12SG  150-154
+        HYK9DH   155-158
+        HYK9EH   159-162
+        HYK9FH   163-166
+        HYK11AH  167-172
+        HYK12SH  173-177
+        HYK9DI   178-181
+        HYK9EI   182-185
+        HYK9FI   186-189
+        HYK11AI  190-195
+        HYK12SI  196-200
+        HYK9DJ   201-204
+        HYK9EJ   205-208
+        HYK9FJ   209-212
+        HYK11AJ  213-218
+        HYK12SJ  219-223
+        HYK9DK   224-227
+        HYK9EK   228-231
+        HYK9FK   232-235
+        HYK11AK  236-241
+        HYK12SK  242-246
+        HYK9DL   247-250
+        HYK9EL   251-254
+        HYK9FL   255-258
+        HYK11AL  259-264
+        HYK12SL  265-269
+        HYK9DM   270-273
+        HYK9EM   274-277
+        HYK9FM   278-281
+        HYK11AM  282-287
+        HYK12SM  288-292
+        HYK9DN   293-296
+        HYK9EN   297-300
+        HYK9FN   301-304
+        HYK11AN  305-310
+        HYK12SN  311-315
+        HYK9DO   316-319
+        HYK9EO   320-323
+        HYK9FO   324-327
+        HYK11AO  328-333
+        HYK12SO  334-338
+     ;
+
+      LABEL
+        SEQN     = "Respondent identification number"
+        HYK1A    = "Taken vitamins/minerals in past month"
+        HYK1B    = "Taken prescriptn medicines in past month"
+        HYK2A    = "How many vitamins/minerals taken"
+        HYK2B    = "How many prescription medicines taken"
+        HYK3CG   = "Certainty index code-1st"
+        HYK3DG   = "Product class-1st"
+        HYK6SG   = "How often did -- take in past month-1st"
+        HYK8SG   = "How long been taking (month)-1st"
+        HYK3CH   = "Certainty index code-2nd"
+        HYK3DH   = "Product class-2nd"
+        HYK6SH   = "How often did -- take in past month-2nd"
+        HYK8SH   = "How long been taking (month)-2nd"
+        HYK3CI   = "Certainty index code-3rd"
+        HYK3DI   = "Product class-3rd"
+        HYK6SI   = "How often did -- take in past month-3rd"
+        HYK8SI   = "How long been taking (month)-3rd"
+        HYK3CJ   = "Certainty index code-4th"
+        HYK3DJ   = "Product class-4th"
+        HYK6SJ   = "How often did -- take in past month-4th"
+        HYK8SJ   = "How long been taking (month)-4th"
+        HYK3CK   = "Certainty index code-5th"
+        HYK3DK   = "Product class-5th"
+        HYK6SK   = "How often did -- take in past month-5th"
+        HYK8SK   = "How long been taking (month)-5th"
+        HYK3CL   = "Certainty index code-6th"
+        HYK3DL   = "Product class-6th"
+        HYK6SL   = "How often did -- take in past month-6th"
+        HYK8SL   = "How long been taking (month)-6th"
+        HYK3CM   = "Certainty index code-7th"
+        HYK3DM   = "Product class-7th"
+        HYK6SM   = "How often did -- take in past month-7th"
+        HYK8SM   = "How long been taking (month)-7th"
+        HYK3CN   = "Certainty index code-8th"
+        HYK3DN   = "Product class-8th"
+        HYK6SN   = "How often did -- take in past month-8th"
+        HYK8SN   = "How long been taking (month)-8th"
+        HYK3CO   = "Certainty index code-9th"
+        HYK3DO   = "Product class-9th"
+        HYK6SO   = "How often did -- take in past month-9th"
+        HYK8SO   = "How long been taking (month)-9th"
+        HYK3CP   = "Certainty index code-10th"
+        HYK3DP   = "Product class-10th"
+        HYK6SP   = "How often did -- take in past month-10th"
+        HYK8SP   = "How long been taking (month)-10th"
+        HYK9DG   = "Primary drug class code-1st"
+        HYK9EG   = "Secondary drug class code-1st"
+        HYK9FG   = "Tertiary drug class code-1st"
+        HYK11AG  = "ICD-9-CM code-1st"
+        HYK12SG  = "For how long been taking (days)-1st"
+        HYK9DH   = "Primary drug class code-2nd"
+        HYK9EH   = "Secondary drug class code-2nd"
+        HYK9FH   = "Tertiary drug class code-2nd"
+        HYK11AH  = "ICD-9-CM code-2nd"
+        HYK12SH  = "For how long been taking (days)-2nd"
+        HYK9DI   = "Primary drug class code-3rd"
+        HYK9EI   = "Secondary drug class code-3rd"
+        HYK9FI   = "Tertiary drug class code-3rd"
+        HYK11AI  = "ICD-9-CM code-3rd"
+        HYK12SI  = "For how long been taking (days)-3rd"
+        HYK9DJ   = "Primary drug class code-4th"
+        HYK9EJ   = "Secondary drug class code-4th"
+        HYK9FJ   = "Tertiary drug class code-4th"
+        HYK11AJ  = "ICD-9-CM code-4th"
+        HYK12SJ  = "For how long been taking (days)-4th"
+        HYK9DK   = "Primary drug class code-5th"
+        HYK9EK   = "Secondary drug class code-5th"
+        HYK9FK   = "Tertiary drug class code-5th"
+        HYK11AK  = "ICD-9-CM code-5th"
+        HYK12SK  = "For how long been taking (days)-5th"
+        HYK9DL   = "Primary drug class code-6th"
+        HYK9EL   = "Secondary drug class code-6th"
+        HYK9FL   = "Tertiary drug class code-6th"
+        HYK11AL  = "ICD-9-CM code-6th"
+        HYK12SL  = "For how long been taking (days)-6th"
+        HYK9DM   = "Primary drug class code-7th"
+        HYK9EM   = "Secondary drug class code-7th"
+        HYK9FM   = "Tertiary drug class code-7th"
+        HYK11AM  = "ICD-9-CM code-7th"
+        HYK12SM  = "For how long been taking (days)-7th"
+        HYK9DN   = "Primary drug class code-8th"
+        HYK9EN   = "Secondary drug class code-8th"
+        HYK9FN   = "Tertiary drug class code-8th"
+        HYK11AN  = "ICD-9-CM code-8th"
+        HYK12SN  = "For how long been taking (days)-8th"
+        HYK9DO   = "Primary drug class code-9th"
+        HYK9EO   = "Secondary drug class code-9th"
+        HYK9FO   = "Tertiary drug class code-9th"
+        HYK11AO  = "ICD-9-CM code-9th"
+        HYK12SO  = "For how long been taking (days)-9th"
+      ;
+
+
