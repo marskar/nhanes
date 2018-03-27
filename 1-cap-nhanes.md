@@ -6,7 +6,7 @@ author:
 - Martin Skarzynski
 - Prof. Elizabeth Platz
 institute: Johns Hopkins School of Public Health
-date: "2018-03-26"
+date: "2018-03-27"
 output:
   word_document:
     reference_docx: style_nhanes.docx
@@ -50,3 +50,6 @@ This is a list
 - item1
 - item2
 - item3
+
+This is an image
+![](img/maasJAMA2016.png)
