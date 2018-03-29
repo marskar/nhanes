@@ -2,16 +2,8 @@
 ---
 title: Lethal Cancer Risk Factors in NHANES
 subtitle: Multidimensional Analysis of Potential Cancer Mortality Risk Factors in the National Health and Nutrition Examination Survey
-author:
-- Martin Skarzynski
-- Prof. Elizabeth Platz
-institute: Johns Hopkins School of Public Health
-date: "2018-03-27"
-output:
-  word_document:
-    reference_docx: style_nhanes.docx
-bibliography: bibliography_nhanes.bib
-csl: biomed-central.csl
+bibliography: bib/nhanes.bib
+csl: bib/biomed-central.csl
 ---
 
 This is a test.
@@ -40,9 +32,11 @@ This is another chunk (included).
 ```r
 x=5
 x
+libr
 ```
 
 ```
+libr
 ## [1] 5
 ```
 
@@ -53,3 +47,8 @@ This is a list
 
 This is an image
 ![](img/maasJAMA2016.png)
+
+This is a citation:
+[@Ma
+In publishing and graphic design, lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document without relying on meaningful content (also called greeking). Replacing the actual content with placeholder text allows designers to design the form of the content before the content itself has
+

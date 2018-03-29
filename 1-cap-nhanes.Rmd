@@ -14,6 +14,19 @@ bibliography: bibliography_nhanes.bib
 csl: biomed-central.csl
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = FALSE)
+
+```
+
+```{r}
+library(readr, help)
+```
+
+```{r tr=est}
+library(package, help)
+```
+
 This is a test.
 IF it works x should be equal to 5 below.
 x=`r 10-5`
@@ -24,14 +37,38 @@ This is a table:
 This is a chunk (not included).
 ```{r include = FALSE}
 x=5
+merge()
+_libr
+libr
 x
+merge(x, y)
+{
+]b
+},
 ```
 
 This is another chunk (included).
+
 ```{r include = TRUE}
 x=5
 x
 ```
+
+# this is header
+```{r}
+merge(x = , y)
+```
+
+```{r}
+
+```
+
+`r print("hi")`
+
+```{r}
+print("hi")
+```
+
 
 This is a list
 - item1
@@ -40,3 +77,28 @@ This is a list
 
 This is an image
 `r knitr::include_graphics('img/maasJAMA2016.png')`
+
+This is a citation:
+[@Maas_2016]
+[@Islami_2018]
+
+This is a citation using `citr`:
+
+`r citr::md_cite("Maas", bib_file = "bib/nhanes.bib")`
+
+```{r chunk1, echo = FALSE, include = FALSE}
+library(readr, help)
+captioner::captioner()
+```
+
+This is a caption:
+`r `
+```{r}
+```
+This is a caption:
+`r captioner::captioner()`
+
+In publishing and graphic design, lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document without relying on meaningful content (also called greeking). Replacing the actual content with placeholder text allows designers to design the form of the content before the content itself has
+
+
+
