@@ -1,5 +1,5 @@
 adult <- readr::read_csv("dat/adult.csv")
-mort <- readr::read_csv("dat/mort.csv")
+mort <- readr::read_csv("../dat/mort.csv")
 exam <- readr::read_csv("dat/exam.csv")
 lab <- readr::read_csv("dat/lab.csv")
 
@@ -16,3 +16,5 @@ amel <- left_join(x = adult, y = mort, by = "SEQN") %>%
     mutate(canc_mort = if_else(UCOD_LEADING=='002', true = 1, false = 0))
 
 readr::write_csv(amel, "dat/join.csv")
+
+glimpse(mort)
