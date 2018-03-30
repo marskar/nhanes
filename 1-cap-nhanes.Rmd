@@ -24,7 +24,9 @@ library(readr, help)
 ```
 
 ```{r tr=est}
-library(package, help)
+library(readr, help)
+
+knitr::kable(head(mtcars[, 1:5]), format = "markdown")
 ```
 
 This is a test.

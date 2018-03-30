@@ -75,16 +75,6 @@ PROC FORMAT;
     1 = "Yes"  
     . = "Ineligible, under age 18, assumed alive or no cause data";
 
-  VALUE QRTFMT
-    1 = "January - March"
-    2 = "April   - June"
-    3 = "July    - September"
-    4 = "October - December" 
-    . = "Ineligible, under age 18 or assumed alive";
-
-  VALUE DODYFMT
-    . = "Ineligible, under age 18 or assumed alive";
-
   VALUE $UCODFMT
 		"001" = "Diseases of heart (I00-I09, I11, I13, I20-I51)"
 		"002" = "Malignant neoplasms (C00-C97)"
@@ -127,10 +117,6 @@ INPUT
 	HYPERTEN		22
 	
 
-	DODQTR			23		/*NHIS AND LSOA II ONLY*/
-	DODYEAR			24-27	/*NHIS AND LSOA II ONLY*/
-	WGT_NEW			28-35	/*NHIS ONLY*/
-	SA_WGT_NEW		36-43 	/*NHIS ONLY*/
 	PERMTH_INT		44-46	/*NHANES ONLY*/
 	PERMTH_EXM		47-49	/*NHANES ONLY*/
 
@@ -182,8 +168,6 @@ FORMAT
 	MORTSRCE_DCL 	MRSRCFMT.
 	
 	CAUSEAVL 		CAUSEFMT.
-	DODQTR   		QRTFMT.           
-	DODYEAR  		DODYFMT.
 	DIABETES 		FLAGFMT.          
 	HYPERTEN 		FLAGFMT. 
      	;

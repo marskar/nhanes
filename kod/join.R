@@ -1,7 +1,8 @@
-adult <- readr::read_csv("dat/adult.csv")
-mort <- readr::read_csv("../dat/mort.csv")
-exam <- readr::read_csv("dat/exam.csv")
-lab <- readr::read_csv("dat/lab.csv")
+## read in data processed using sas ####
+adult <- readr::read_rds("dat/adult.rds")
+mort <- readr::read_rds("dat/mort.rds")
+exam <- readr::read_rds("dat/exam.rds")
+lab <- readr::read_rds("dat/lab.rds")
 
 adult$SEQN <- as.numeric(adult$SEQN)
 mort$SEQN <- as.numeric(mort$SEQN)
