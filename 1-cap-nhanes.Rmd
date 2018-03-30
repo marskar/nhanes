@@ -1,7 +1,8 @@
 
 ---
 title: Lethal Cancer Risk Factors in NHANES
-subtitle: Multidimensional Analysis of Potential Cancer Mortality Risk Factors in the National Health and Nutrition Examination Survey
+subtitle: Interrogating the Human Exposome for Cancer Mortality Risk Factors in the National
+Health and Nutrition Examination Survey
 author:
 - Martin Skarzynski
 - Prof. Elizabeth Platz
