@@ -10,8 +10,8 @@ institute: Johns Hopkins School of Public Health
 date: "`r Sys.Date()`"
 output:
   word_document:
-    reference_docx: style_nhanes.docx
-bibliography: bibliography_nhanes.bib
+    reference_docx: style-nhanes.docx
+bibliography: bibliography-nhanes.bib
 csl: biomed-central.csl
 ---
 
