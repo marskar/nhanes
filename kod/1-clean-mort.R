@@ -1,17 +1,19 @@
 ## read in data processed using sas and clean w/ dplyr ####
 library(dplyr)
-mort <- readr::read_csv("dat/mort.csv") %>%
+library(readr)
+read_csv("dat/mort.csv") %>%
     select(-starts_with("MORTSRCE")) %>%
+    filter(!is.na(UCOD_LEADING) & !is.na(PERMTH_INT)) %>%
     mutate_at(.vars = vars(-starts_with("PERMTH_"),
                            -SEQN),
-              .funs = funs(as.factor))
-
-readr::write_rds(mort, "dat/mort.rds")
+              .funs = funs(as.factor)) %>%
+    write_rds("dat/mort.rds")
 
 #names(mort)
 #length(mort)
 #glimpse(mort)
 
+#any(is.na(mort$PERMTH_INT))
 #all(is.na((select(mort, contains('WGT')))))
 #all(is.na((select(mort, contains('MORTSRCE_DCL')))))
 #unique(select(mort, -contains('MORTSRCE')))
