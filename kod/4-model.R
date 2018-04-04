@@ -4,16 +4,15 @@ dat <- readr::read_rds('../dat/median-imputed.rds')
 
 
 library(survey)
-
+library(survminer)
+1
 
 #eval(vrs)
 #deparse(substitute(vrs))
 
 train <- sample(x = seq(nrow(dat)),
                size = nrow(dat)*.7)
-
 des <- svydesign(ids = ~SDPPSU6, strata = ~SDPSTRA6, weights = ~WTPFQX6, nest = TRUE, data = dat)
-
 form1 <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
 
 allvrs <- as.name(paste(names(dat)[380:400], collapse=' + '))
@@ -24,7 +23,10 @@ ridvrs <- as.name(paste(names(dat)[785:800], collapse=', '))
 ridform <- update(form1, paste("~ ridge(", ridvrs, ')'))
 ridfit <- svycoxph(formula = ridform, design = des, data = dat[train,])
 
+#km <- svykm(formula = allform, design = des, data = dat[train,])
+#plot(km)
 
+#ggforest(ridfit)
 #svyfit <- svycoxph(formula = Surv(PERMTH_INT, canc_mort) ~ ridge(GHP, TPP, CHP), design = des, data = dat[train,])
 #pred <- predict(object = svyfit, newdata = dat[-train,], type = "expected")
 #pred
@@ -47,11 +49,16 @@ ridfit <- svycoxph(formula = ridform, design = des, data = dat[train,])
 #form3
 #form4 <- update(form1, paste("~ . + ridge(", vrs, ', scale = FALSE, theta = 1)'))
 #form4
-
-
+#class(ridfit)
+#class(allfit)
+#class( allfit ) <- "coxph"
+#ggforest(allfit)
+#ggforest(ridfit)
 
 #library(survival)
-#clMort <- coxph(Surv(PERMTH_INT, canc_mort) ~ . + cluster(SDPPSU6) + strata(SDPSTRA6) - ELIGSTAT,   weight= WTPFHX6, method=c("efron"), data = dat, subset = )
+#coxfit <- coxph(Surv(PERMTH_INT, canc_mort) ~ . + cluster(SDPPSU6) + strata(SDPSTRA6) - ELIGSTAT,   weight= WTPFHX6, method=c("efron"), data = dat)
+#coxfit <- coxph(Surv(PERMTH_INT, canc_mort) ~ CHP + GHP + cluster(SDPPSU6) + strata(SDPSTRA6) - ELIGSTAT,   weight= WTPFHX6, method=c("efron"), data = dat, robust = TRUE)
+#ggforest(coxfit, data = dat)
 #names(dat)
 #library(glmnet)
 # https://cran.r-project.org/web/packages/glmnet/vignettes/Coxnet.pdf
