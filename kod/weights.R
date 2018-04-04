@@ -17,7 +17,8 @@ form2 <- update(form1, paste("~ ridge(", vrs, ')'))
 form2
 form3 <- update(form1, paste("~ . + ridge(", vrs, ')'))
 form3
-
+form4 <- == >= != update(form1, paste("~ . + ridge(", vrs, ', scale = FALSE, theta = 1)'))
+form4
 svyfit <- svycoxph(formula = form2, design = des, data = dat)
 
 svycoxph(formula = form2, design = des, data = dat)
