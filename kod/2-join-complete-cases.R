@@ -20,11 +20,17 @@ lab$SEQN <- as.numeric(lab$SEQN)
 left_join(x = mort, y = adult, by = "SEQN") %>%
 left_join(x = ., y = exam, by = "SEQN") %>%
 left_join(x = ., y = lab, by = "SEQN") %>%
-filter(HAC1N==2 & HAC1O==2) %>%
-mutate(canc_mort = if_else(UCOD_LEADING=='Malignant neoplasms (C00-C97)',
-                           true = 1, false = 0)) %>%
+filter(HAC1N==2 &
+       HAC1O==2 &
+       !is.na(SDPPSU6) &
+       !is.na(SDPSTRA6) &
+       !is.na(WTPFQX6)) %>%
+mutate(canc_mort =
+       if_else(UCOD_LEADING ==
+               'Malignant neoplasms (C00-C97)',
+               true = 1, false = 0)) %>%
 mutate_if(.predicate = is.character,
-      .funs = as.numeric) %>%
+          .funs = as.numeric) %>%
 select(which(colMeans(is.na(.))==0)) %>%
 readr::write_rds("dat/join-complete-cases.rds")
 
