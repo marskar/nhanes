@@ -1,47 +1,53 @@
 dat <- readr::read_rds('../dat/median-imputed.rds')
-glimpse(dat)
+
 # use complete cases too!
-length( dat$WTPFQX6 )
-dat$WTPFQX6
+
+
 library(survey)
-library(dplyr)
-vrs <- as.name(paste(names(dat)[10:20], collapse=', '))
+
 
 #eval(vrs)
 #deparse(substitute(vrs))
 
-des<-svydesign(ids=~SDPPSU6, strata=~SDPSTRA6, weights=~WTPFQX6, nest = TRUE, data=dat)
-
-form1 <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
-form2 <- update(form1, paste("~ ridge(", vrs, ')'))
-form2
-form3 <- update(form1, paste("~ . + ridge(", vrs, ')'))
-form3
-form4 <- update(form1, paste("~ . + ridge(", vrs, ', scale = FALSE, theta = 1)'))
-form4
-
 train <- sample(x = seq(nrow(dat)),
                size = nrow(dat)*.7)
 
-svyfit <- svycoxph(formula = form2, design = des, data = dat[train,])
+des <- svydesign(ids = ~SDPPSU6, strata = ~SDPSTRA6, weights = ~WTPFQX6, nest = TRUE, data = dat)
 
-svycoxph(formula = form2, design = des, data = dat)
+form1 <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
+
+allvrs <- as.name(paste(names(dat)[380:400], collapse=' + '))
+allform <- update(form1, paste("~ ", allvrs))
+allfit <- svycoxph(formula = allform, design = des, data = dat[train,])
+
+ridvrs <- as.name(paste(names(dat)[785:800], collapse=', '))
+ridform <- update(form1, paste("~ ridge(", ridvrs, ')'))
+ridfit <- svycoxph(formula = ridform, design = des, data = dat[train,])
 
 
-svyfit <- svycoxph(formula = Surv(PERMTH_INT, canc_mort) ~ ridge(GHP, TPP, CHP), design = des, data = dat[train,])
-pred <- predict(object = svyfit, newdata = dat[-train,])
+#svyfit <- svycoxph(formula = Surv(PERMTH_INT, canc_mort) ~ ridge(GHP, TPP, CHP), design = des, data = dat[train,])
+#pred <- predict(object = svyfit, newdata = dat[-train,], type = "expected")
+#pred
+#hist(pred)
+#plot(survfit(svyfit))
+#plot(pred)
+#coef(svyfit)
+#AIC(svyfit)
 
-plot(survfit(svyfit))
-plot(pred)
-coef(svyfit)
-AIC(svyfit)
+#summary(des)
+#summary(svyfit)
+#summary(pred)
 
-summary(des)
-summary(svyfit)
-summary(pred)
+#svymean(~canc_mort,design= des)
+#svytotal(~canc_mort,design= des)
 
-svymean(~canc_mort,design= des)
-svytotal(~canc_mort,design= des)
+
+#form2
+#form3 <- update(form1, paste("~ . + ridge(", vrs, ')'))
+#form3
+#form4 <- update(form1, paste("~ . + ridge(", vrs, ', scale = FALSE, theta = 1)'))
+#form4
+
 
 
 #library(survival)
