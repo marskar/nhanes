@@ -17,30 +17,43 @@ form2 <- update(form1, paste("~ ridge(", vrs, ')'))
 form2
 form3 <- update(form1, paste("~ . + ridge(", vrs, ')'))
 form3
-form4 <- == >= != update(form1, paste("~ . + ridge(", vrs, ', scale = FALSE, theta = 1)'))
+form4 <- update(form1, paste("~ . + ridge(", vrs, ', scale = FALSE, theta = 1)'))
 form4
-svyfit <- svycoxph(formula = form2, design = des, data = dat)
+
+train <- sample(x = seq(nrow(dat)),
+               size = nrow(dat)*.7)
+
+svyfit <- svycoxph(formula = form2, design = des, data = dat[train,])
 
 svycoxph(formula = form2, design = des, data = dat)
 
-svyfit <- svycoxph(formula = Surv(PERMTH_INT, canc_mort) ~ ridge(GHP, TPP, CHP), design = des, data = dat)
-svyfit <- svycoxph(formula = Surv(PERMTH_INT, canc_mort) ~ ridge(GHP, TPP, CHP), design = des, data = dat)
+
+svyfit <- svycoxph(formula = Surv(PERMTH_INT, canc_mort) ~ ridge(GHP, TPP, CHP), design = des, data = dat[train,])
+pred <- predict(object = svyfit, newdata = dat[-train,])
+
+plot(survfit(svyfit))
+plot(pred)
+coef(svyfit)
+AIC(svyfit)
+
 summary(des)
 summary(svyfit)
+summary(pred)
 
 svymean(~canc_mort,design= des)
 svytotal(~canc_mort,design= des)
 
-library(survival)
-clMort <- coxph(Surv(PERMTH_INT, canc_mort) ~ . + cluster(SDPPSU6) + strata(SDPSTRA6) - ELIGSTAT,   weight= WTPFHX6, method=c("efron"), data = dat) 
-names(dat)
+
+#library(survival)
+#clMort <- coxph(Surv(PERMTH_INT, canc_mort) ~ . + cluster(SDPPSU6) + strata(SDPSTRA6) - ELIGSTAT,   weight= WTPFHX6, method=c("efron"), data = dat, subset = )
+#names(dat)
 #library(glmnet)
 # https://cran.r-project.org/web/packages/glmnet/vignettes/Coxnet.pdf
 #library(glmnetUtils)
 # use formula notation in cv.glment function with glmnetUtils
 # https://www.rdocumentation.org/packages/glmnetUtils/versions/1.1/topics/cv.glmnet
 # x = x_train, y = y_train
-min(dat$PERMTH_INT)
+#min(dat$PERMTH_INT)
 
 #cv_fit <- cv.glmnet(Surv(time = PERMTH_INT,
                          #event = canc_mort) ~ . + cluster(SDPPSU6) + strata(SDPSTRA6) - ELIGSTAT,
@@ -48,25 +61,20 @@ min(dat$PERMTH_INT)
           #maxit = 1000,
           #weights = WTPFQX6,
           #data = dat)
-summary(clMort)
-fitcox<-svycoxph(Surv(dat$PERMTH_INT, dat$canc_mort)~x, design=des)
-weight
-stset data
+#summary(clMort)
 # unweighted and weighted?
-primary sample unit = PSU 
-PSU variable in NHANES
-strata variable in NHANES
-weights variable in NHANES
-
-use survey package svydesign function
-create an object which I can feed into svycoxph()
+#primary sample unit = PSU 
+#PSU variable in NHANES
 #psu
-dat$SDPPSU6
+#dat$SDPPSU6
+#strata variable in NHANES
 #strata
-dat$SDPSTRA6
+#dat$SDPSTRA6
+#weights variable in NHANES
+#dat$WTPFQX6 
+#use survey package svydesign function
 
-length of weight variable == length( dat$WTPFQX6 )
-any(is.na(dat))
+#any(is.na(dat))
 #any(is.na(dat))
 #all(!is.na(dat))
 
