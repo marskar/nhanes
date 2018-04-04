@@ -33,10 +33,18 @@ dat <- dat %>%
            -HAC1N,
            -HAC1O,
            -HSAGEU.y,
-           -HSAGEU
+           -HSAGEU,
+           )
+head(names(dat))
+
+#move PERMTH_INT and canc_mort to the beginning
+dat <- dat %>%
+    select(PERMTH_INT,
+           canc_mort,
+           everything(),
            )
 
-cols <- seq(ncol(dat)-1)
+cols <- seq(ncol(dat)-2)+2 #last col is canc_mort
 
 allvrs <- as.name(paste(names(dat)[14:110], collapse=' + '))
 allform <- update(form1, paste("~ ", allvrs))
