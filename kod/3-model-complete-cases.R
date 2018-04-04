@@ -1,7 +1,7 @@
 dat <- readr::read_rds('../dat/join-complete-cases.rds')
 library(dplyr)
 library(survey)
-library(survminer)
+#library(survminer)
 # dim(dat)
 # [1] 16404   645
 
@@ -36,7 +36,11 @@ dat <- dat %>%
            -HSAGEU,
            )
 head(names(dat))
+dim(dat)
+source("../frailty.controldf.R")
+source("../lasso.R")
 
+# [1] 16404   630
 #move PERMTH_INT and canc_mort to the beginning
 dat <- dat %>%
     select(PERMTH_INT,
@@ -49,10 +53,21 @@ cols <- seq(ncol(dat)-2)+2 #last col is canc_mort
 allvrs <- as.name(paste(names(dat)[14:110], collapse=' + '))
 allform <- update(form1, paste("~ ", allvrs))
 allfit <- svycoxph(formula = allform, design = des, data = dat[train,])
-ridvrs <- as.name(paste(names(dat)[785:800], collapse=', '))
+
+ridvrs <- as.name(paste(names(dat)[85:90], collapse=', '))
 ridform <- update(form1, paste("~ ridge(", ridvrs, ')'))
 ridfit <- svycoxph(formula = ridform, design = des, data = dat[train,])
 
+
+lasvrs <- as.name(paste(names(dat)[285:290], collapse=', '))
+lasform <- update(form1, paste("~ lasso(", ridvrs, ', theta = 1 )'))
+lasform <- update(form1, paste("~ lasso(", ridvrs, ')'))
+lasfit <- svycoxph(formula = lasform, design = des, data = dat[train,])
+lasfit <- svycoxph(formula = Surv(PERMTH_INT, canc_mort) ~ lasso(PHPHEMO), design = des, data = dat[train,])
+#glimpse(dat)
+#ridfit
+#lasfit
+#coef( lasfit )
 #km <- svykm(formula = allform, design = des, data = dat[train,])
 #plot(km)
 
