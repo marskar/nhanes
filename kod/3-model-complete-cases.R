@@ -16,21 +16,29 @@ des <- svydesign(ids = ~SDPPSU6, strata = ~SDPSTRA6, weights = ~WTPFQX6, nest = 
 form1 <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
 names(dat)
 
-#need to remove variables with only one unique value
-unique(dat[,14])
+#remove variables with only one unique value
+uniq <- dat %>%
+    summarise_all(funs(n_distinct))
+cond <- uniq>1
+names(dat)[ which(cond==FALSE) ]
 
 dat <- dat %>%
     select(-SEQN,
            -contains(match = 'STAT'),
            -CAUSEAVL,
            -UCOD_LEADING,
-           -PERMTH_EXM
-           -HSAGEU.x
+           -PERMTH_EXM,
+           -HSAGEU.x,
+           -HFC1,
+           -HAC1N,
+           -HAC1O,
+           -HSAGEU.y,
+           -HSAGEU
            )
 
 cols <- seq(ncol(dat)-1)
 
-allvrs <- as.name(paste(names(dat)[100:110], collapse=' + '))
+allvrs <- as.name(paste(names(dat)[14:110], collapse=' + '))
 allform <- update(form1, paste("~ ", allvrs))
 allfit <- svycoxph(formula = allform, design = des, data = dat[train,])
 ridvrs <- as.name(paste(names(dat)[785:800], collapse=', '))
