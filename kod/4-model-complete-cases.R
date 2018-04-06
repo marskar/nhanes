@@ -1,18 +1,17 @@
+library(here)
 library(readr)
 library(dplyr)
 library(survey)
-source("kod/frailty.controldf.R")
-source("kod/lasso.R")
+source(here("kod/frailty.controldf.R"))
+source(here("kod/lasso.R"))
 
 seed <- sample(seq(99), size = 1)
 set.seed(seed = seed)
 
-#train <- sample(x = seq(nrow(dat)),
-#               size = nrow(dat)*.7)
 
 #move PERMTH_INT and canc_mort to the beginning
 #sample a tenth of the dataset columns
-samp <- read_rds('dat/3-clean-complete-cases.rds') %>%
+samp <- read_rds(here('dat/3-clean-complete-cases.rds')) %>%
     select(-SEQN) %>%
     select(PERMTH_INT,
            canc_mort,
@@ -31,6 +30,23 @@ vrs <- as.name(paste(names(samp)[3:ncol(samp)],
                      collapse=' + '))
 vrs2 <- as.name(paste(names(samp)[3:ncol(samp)],
                       collapse=', '))
+
+train <- sample(x = seq(nrow(samp)),
+               size = nrow(samp)*.7)
+
+coxfit <- update(form, paste("~ ", vrs)) %>%
+svycoxph(design = des, data = samp[train,])
+
+coxmse <- mean(x = coxfit$residuals^2)
+coxmse
+aic <- AIC(coxfit)[2]
+pred <- survfit(coxfit, newdata = samp[-train,])
+predict(object = coxfit, newdata = samp[-train,])
+coxfitsumm <- summary(coxfit)
+
+prediction_train<-predict(basic.coxph,train,type="risk")
+
+prediction_test<-predict(object=basic.coxph,newdata=validate,type="risk")
 
 # generate cox models without and with penalties
 update(form, paste("~ ", vrs)) %>%

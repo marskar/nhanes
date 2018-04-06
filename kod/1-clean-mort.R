@@ -1,13 +1,14 @@
 ## read in data processed using sas and clean w/ dplyr ####
+library(here)
 library(dplyr)
 library(readr)
-read_csv("dat/mort.csv") %>%
+read_csv(here("dat/mort.csv")) %>%
     select(-starts_with("MORTSRCE")) %>%
     filter(!is.na(UCOD_LEADING) & !is.na(PERMTH_INT)) %>%
     mutate_at(.vars = vars(-starts_with("PERMTH_"),
                            -SEQN),
               .funs = funs(as.factor)) %>%
-    write_rds("dat/1-clean-mort.rds")
+    write_rds(here("dat/1-clean-mort.rds"))
 
 #names(mort)
 #length(mort)
