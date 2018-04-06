@@ -1,8 +1,8 @@
 library(readr)
 library(dplyr)
 library(survey)
-source("../frailty.controldf.R")
-source("../lasso.R")
+source("kod/frailty.controldf.R")
+source("kod/lasso.R")
 
 seed <- sample(seq(99), size = 1)
 set.seed(seed = seed)
@@ -12,7 +12,7 @@ set.seed(seed = seed)
 
 #move PERMTH_INT and canc_mort to the beginning
 #sample a tenth of the dataset columns
-samp <- read_rds('../dat/clean-complete-cases.rds') %>%
+samp <- read_rds('dat/3-clean-complete-cases.rds') %>%
     select(-SEQN) %>%
     select(PERMTH_INT,
            canc_mort,
@@ -35,15 +35,15 @@ vrs2 <- as.name(paste(names(samp)[3:ncol(samp)],
 # generate cox models without and with penalties
 update(form, paste("~ ", vrs)) %>%
 svycoxph(design = des, data = samp) %>%
-write_rds(paste0("../dat/cox-model", seed, ".rds"))
+write_rds(paste0("obj/cox-model", seed, ".rds"))
 
 update(form, paste("~ ridge(", vrs2, ')')) %>%
 svycoxph(design = des, data = samp) %>%
-write_rds(paste0("../dat/ridge-model", seed, ".rds"))
+write_rds(paste0("obj/ridge-model", seed, ".rds"))
 
 update(form, paste("~ lasso(", vrs2, ')')) %>%
 svycoxph(design = des, data = samp) %>%
-write_rds(paste0("../dat/lasso-model", seed, ".rds"))
+write_rds(paste0("obj/lasso-model", seed, ".rds"))
 
 #update(form, paste("~ ridge(", vrs2, ', theta = 10 )'))
 #update(form, paste("~ lasso(", vrs2, ', theta = 10 )'))

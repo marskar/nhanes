@@ -7,7 +7,7 @@ read_csv("dat/mort.csv") %>%
     mutate_at(.vars = vars(-starts_with("PERMTH_"),
                            -SEQN),
               .funs = funs(as.factor)) %>%
-    write_rds("dat/mort.rds")
+    write_rds("dat/1-clean-mort.rds")
 
 #names(mort)
 #length(mort)

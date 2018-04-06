@@ -1,6 +1,9 @@
 library(readr)
 library(dplyr)
-#library(survey)
+#source("frailty.controldf.R")
+source("lasso.R")
+source("coxph.R")
+library(survey)
 library(caret)
 #library(survminer)
 # dim(dat)
@@ -10,7 +13,7 @@ library(caret)
 #find variables with more than one unique value
 #find highly correlated variables
 
-dat <- read_rds('dat/2-exam-join.rds') %>%
+dat <- read_rds('dat/2-lab-join.rds') %>%
     select_if(is.numeric) %>%
     select_if(~n_distinct(.) > 1)  %>%
     select(-findCorrelation(cor(.), cutoff=0.81))
@@ -20,17 +23,17 @@ dat <- read_rds('dat/2-exam-join.rds') %>%
 # all(summarise_all(dat, n_distinct)>1)
 # [1] TRUE
 dim(dat)
-source("frailty.controldf.R")
-source("lasso.R")
-source("coxph.R")
-source("svydesign.R")
-source("svycoxph.R")
-source("coxph.control.R")
-source("Surv.R")
-source("ridge.R")
-source("aeqSurv.R")
-source("is.Surv.R")
-source("terms.inner.R")
+#source("svydesign.R")
+#source("svycoxph.R")
+#source("coxph.control.R")
+#source("Surv.R")
+#source("ridge.R")
+#source("aeqSurv.R")
+#source("is.Surv.R")
+#source("terms.inner.R")
+#source("untangle.specials.R")
+#source("attrassign.R")
+#source("coxpenal.fit.R")
 
 set.seed(12345)
 
@@ -50,28 +53,27 @@ form1 <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
 #cols <- seq(ncol(dat)-2)+2 #last col is canc_mort
 dim(dat)
 
-allvrs50 <- as.name(paste(names(dat)[3:55], collapse=' + '))
+allvrs <- as.name(paste(names(dat)[3:36], collapse=' + '))
 allform <- update(form1, paste("~ ", allvrs50))
 allfit <- svycoxph(formula = allform, design = des, data = dat[train,])
 
-allform
+allvrs2 <- as.name(paste(names(dat)[37:70], collapse=' + '))
+allform2 <- update(form1, paste("~ ", allvrs2))
+allfit2 <- svycoxph(formula = allform2, design = des, data = dat[train,])
 
-allvrs100 <- as.name(paste(names(dat)[51:100], collapse=' + '))
-allform <- update(form1, paste("~ ", allvrs100))
-allfit <- svycoxph(formula = allform, design = des, data = dat[train,])
-
-ridvrs <- as.name(paste(names(dat)[3:75], collapse=', '))
+ridvrs <- as.name(paste(names(dat)[5:52], collapse=', '))
 ridform <- update(form1, paste("~ ridge(", ridvrs, ')'))
 ridfit <- svycoxph(formula = ridform, design = des, data = dat[train,])
-ridform
 
-dim(dat)
-ord
-lasvrs <- as.name(paste(names(dat)[3:75], collapse=', '))
+ridvrs2 <- as.name(paste(names(dat)[64:75], collapse=', '))
+ridform2 <- update(form1, paste("~ ridge(", ridvrs2, ')'))
+ridfit2 <- svycoxph(formula = ridform2, design = des, data = dat[train,])
+
+lasvrs <- as.name(paste(names(dat)[3:70], collapse=', '))
 lasform <- update(form1, paste("~ lasso(", lasvrs, ', theta = 10 )'))
 #lasform <- update(form1, paste("~ lasso(", lasvrs, ')'))
-lasfit <- svycoxph(formula = lasform, design = des, data = dat[train,])
-lasfit
+lasfit <- svycoxph(formula = lasform, design = des, data = dat)
+which(names(dat)=="WTPQRP48")
 
 lasvrs <- as.name(paste(names(dat)[8:296], collapse=', '))
 lasform <- update(form1, paste("~ lasso(", lasvrs, ', theta = 10 )'))

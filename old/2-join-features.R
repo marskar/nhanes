@@ -1,7 +1,6 @@
 library(dplyr)
 ## read in data processed using sas ####
 adult <- readr::read_csv("dat/adult.csv")
-mort <- readr::read_rds("dat/1-clean-mort.rds")
 exam <- readr::read_csv("dat/exam.csv")
 lab <- readr::read_csv("dat/lab.csv")
 
@@ -17,8 +16,7 @@ lab$SEQN <- as.numeric(lab$SEQN)
 ## Convert all character variables to numeric
 ## Select only columns with less than 10% NAs
 ## write out an RDS file
-left_join(x = mort, y = adult, by = "SEQN") %>%
-left_join(x = ., y = exam, by = "SEQN") %>%
+left_join(x = adult, y = exam, by = "SEQN") %>%
 left_join(x = ., y = lab, by = "SEQN") %>%
 filter(HAC1N==2 &
        HAC1O==2 &
@@ -32,7 +30,7 @@ mutate(canc_mort =
 mutate_if(.predicate = is.character,
           .funs = as.numeric) %>%
 select(which(colMeans(is.na(.))==0)) %>%
-readr::write_rds("dat/2-join-complete-cases.rds")
+readr::write_rds("dat/join-complete-cases.rds")
 
 
 #warnings()
