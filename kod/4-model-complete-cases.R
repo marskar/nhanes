@@ -38,7 +38,7 @@ train <- sample(x = seq(nrow(samp)),
 seed = args[1]
 # generate cox models without and with penalties
 update(form, paste("~ ", vrs)) %>%
-svycoxph(design = des, data = samp) %>%
+svycoxph(design = des, data = samp[train,]) %>%
 write_rds(here(paste0("obj/",
                  round(AIC(.)[2]),
                  "-",
@@ -50,7 +50,7 @@ write_rds(here(paste0("obj/",
                  ".rds")))
 
 update(form, paste("~ ridge(", vrs2, ')')) %>%
-svycoxph(design = des, data = samp) %>%
+svycoxph(design = des, data = samp[train,]) %>%
 write_rds(here(paste0("obj/",
                  round(AIC(.)[2]),
                  "-",
@@ -62,7 +62,7 @@ write_rds(here(paste0("obj/",
                  ".rds")))
 
 update(form, paste("~ lasso(", vrs2, ')')) %>%
-svycoxph(design = des, data = samp) %>%
+svycoxph(design = des, data = samp[train,]) %>%
 write_rds(here(paste0("obj/",
                  round(AIC(.)[2]),
                  "-",

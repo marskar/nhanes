@@ -10,7 +10,7 @@
 dat/
 lit/
 raw/
-obj/
+obj*/
 
 # ignore Google files (backed up by Google drive)
 *.gdoc
