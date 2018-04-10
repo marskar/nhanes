@@ -27,9 +27,9 @@ des <- svydesign(ids = ~SDPPSU6, strata = ~SDPSTRA6, weights = ~WTPFQX6, nest = 
 # create left side of equations
 form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
 # create right sides of equations
-vrs <- as.name(paste(names(samp)[3:ncol(samp)],
+vrs <- as.name(paste(names(samp)[6:ncol(samp)],
                      collapse=' + '))
-vrs2 <- as.name(paste(names(samp)[3:ncol(samp)],
+vrs2 <- as.name(paste(names(samp)[6:ncol(samp)],
                       collapse=', '))
 
 set.seed(seed = args[1])
