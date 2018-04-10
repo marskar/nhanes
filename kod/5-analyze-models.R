@@ -20,9 +20,9 @@ dat %>%
 best_df <- dat %>%
     filter(concord > 80,
            aic  < 14480)
-best_df
+best_coef
 
-best_mod <- read_rds(here('obj/14452-82-lasmodel-83.rds'))
+best_mod <- read_rds(here('obj/14452-81-ridmodel-56.rds'))
 
 best_coef <- best_mod %>%
     coef %>%
