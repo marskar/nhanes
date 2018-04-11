@@ -38,44 +38,29 @@ train <- sample(x = seq(nrow(samp)),
                size = round(nrow(samp)*.7))
 seed = args[1]
 # generate cox models without and with penalties
-samp %>%
-    group_by(PERMTH_INT,
-           canc_mort,
-           SDPPSU6,
-           SDPSTRA6,
-           WTPFQX6) %>%
-    nest() %>%
-    mutate(cox = map(data,
-                     ~
-svycoxph(update(form,
-                paste("~ ", vrs)),
-        design = des,
-        data = .x)))
-# initialize dataframe
+
 seed = 1
+cox <- svycoxph(update(form,
+                            paste("~ ", vrs)),
+                     design = des, data = samp)
 
-models <- data_frame(type = c('coxph', 'ridge', 'lasso'),
-                     seed = rep(seed,3),
-                     fit = c(list( cox ),
-                             list( rid ),
-                             list( las ))
-models %>%
-    mutate(
-    aic = map_dbl(fit, ~ AIC(.x)[["(Intercept)"]]),
-    concordance = map_dbl(fit, ~ coef(.x)[["yr1952"]])
-  )
+rid <-           svycoxph(update(form,
+                            paste("~ ", vrs)),
+                     design = des, data = samp)
 
-                     ,
-                     aic = c(AIC( cox ),
-                             AIC( rid ),
-                             AIC( las ))) %>%
-mutate(concordance = round(summary(.)$concordance[1]*100)))
-models %>%
-    mutate_if(type == "cox", fit = 1)
-models
-models["fit"] <-
-    c(list( cox ), list( cox ),list( cox )) %>%
-length()
+las <-         svycoxph(update(form,
+                            paste("~ ", vrs)),
+                     design = des, data = samp)
+
+get_con = function(x) round(summary(x)$concordance[1]*100)
+
+df <- data_frame(type = c('coxph', 'ridge', 'lasso'),
+                 seed = rep(seed,3),
+                 aic = AIC(cox, rid, las),
+                 concordance = get_con(cox, rid, las)
+                 )
+
+
 cox <- svycoxph(update(form, paste("~ ", vrs)), design = des, data = samp)
 update(form, paste("~ ", vrs)) %>%
 svycoxph(update(form, paste("~ ", vrs)),
