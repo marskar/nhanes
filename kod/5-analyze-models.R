@@ -7,20 +7,25 @@ dat <- read_rds(here("dat/4-model-complete-cases.rds"))
 dat %>%
     head
 
+
 dat %>%
+    mutate(quad =
+           as.factor(
+           case_when(concordance > 78 & aic < 14480 ~ 1,
+                     concordance > 78 & aic >= 14480 ~ 2,
+                     concordance <= 78 & aic < 14480 ~ 3,
+                     concordance <= 78 & aic >= 14480 ~ 4
+                     ))
+           ) ->
+dat_quad
+
+dat_quad %>%
     ggplot(aes(x = aic,
-               y = concordance)) +
+               y = concordance,
+               colour = quad,
+               shape = type)) +
            geom_point() +
            theme_minimal()
-
-best_df <- dat %>%
-    filter(concordance > 80,
-           aic  < 14460)
-best_df
-
-best_coef
-
-best_mod <- read_rds(here('obj/14452-81-ridmodel-56.rds'))
 
 best_coef <- best_mod %>%
     coef %>%
