@@ -10,21 +10,27 @@ library(survey)
 source(here("kod/frailty.controldf.R"))
 source(here("kod/lasso.R"))
 
-set.seed(seed = args[1])
+#set.seed(seed = args[1])
 #move PERMTH_INT and canc_mort to the beginning
 #sample a tenth of the dataset columns
-samp <- read_rds(here('dat/3-clean-complete-cases.rds')) %>%
-    select(-SEQN) %>%
-    select(PERMTH_INT,
-           canc_mort,
-           SDPPSU6,
-           SDPSTRA6,
-           WTPFQX6,
-           everything()[sample(seq(ncol(.)),
-                               size=round(ncol(.)/10))])
+read_rds(here('dat/3-clean-complete-cases.rds')) %>%
+  select(-SEQN) %>%
+  select(PERMTH_INT,
+         canc_mort,
+         SDPPSU6,
+         SDPSTRA6,
+         WTPFQX6,
+         everything()[sample(seq(ncol(.)),
+                             round(ncol(.)/10))]) ->
+samp
 
 # create survey design object
-des <- svydesign(ids = ~SDPPSU6, strata = ~SDPSTRA6, weights = ~WTPFQX6, nest = TRUE, data = samp)
+svydesign(ids = ~SDPPSU6,
+          strata = ~SDPSTRA6,
+          weights = ~WTPFQX6,
+          nest = TRUE,
+          data = samp) ->
+des
 # create left side of equations
 form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
 # create right sides of equations
@@ -39,66 +45,78 @@ train <- sample(x = seq(nrow(samp)),
 seed = args[1]
 # generate cox models without and with penalties
 
-seed = 1
 cox <- svycoxph(update(form,
-                            paste("~ ", vrs)),
-                     design = des, data = samp)
+                       paste("~ ", vrs)),
+                design = des, data = samp)
 
-rid <-           svycoxph(update(form,
-                            paste("~ ", vrs)),
-                     design = des, data = samp)
+rid <- svycoxph(update(form,
+                       paste("~ ridge(", vrs2, ')')),
+                design = des, data = samp)
 
-las <-         svycoxph(update(form,
-                            paste("~ ", vrs)),
-                     design = des, data = samp)
+las <-  svycoxph(update(form,
+                       paste("~ lasso(", vrs2, ')')),
+                design = des, data = samp)
 
 get_con = function(x) round(summary(x)$concordance[1]*100)
 
-df <- data_frame(type = c('coxph', 'ridge', 'lasso'),
-                 seed = rep(seed,3),
-                 aic = AIC(cox, rid, las),
-                 concordance = get_con(cox, rid, las)
-                 )
-
-
-cox <- svycoxph(update(form, paste("~ ", vrs)), design = des, data = samp)
-update(form, paste("~ ", vrs)) %>%
-svycoxph(update(form, paste("~ ", vrs)),
-         design = des,
-         data = samp[train,]) %>%
+seed=1
+data_frame(type = c('coxph', 'ridge', 'lasso'),
+           seed = rep(seed,3),
+           aic = AIC(cox, rid, las)[,2],
+           concordance = c(get_con(cox),
+                           get_con(rid),
+                           get_con(las)),
+           betas = c(list(coef(cox)),
+                     list(coef(rid)),
+                     list(coef(las)))) %>%
 write_rds(here(paste0("obj/",
-                 round(AIC(.)[2]),
-                 "-",
-                 round(summary(.)$concordance[1]*100),
-                 "-",
-                 "coxmodel",
-                 "-",
                  seed,
                  ".rds")))
+install.packages('magick')
+install.packages('lime')
+library('lime')
+signif(summary(cox)$coef[,1], digits=2)
+signif(summary(cox)$coef[,2], digits=2)
 
-update(form, paste("~ ridge(", vrs2, ')')) %>%
-svycoxph(design = des, data = samp[train,]) %>%
-write_rds(here(paste0("obj/",
-                 round(AIC(.)[2]),
-                 "-",
-                 round(summary(.)$concordance[1]*100),
-                 "-",
-                 "ridmodel",
-                 "-",
-                 seed,
-                 ".rds")))
+summary(cox)$wald
 
-update(form, paste("~ lasso(", vrs2, ')')) %>%
-svycoxph(design = des, data = samp[train,]) %>%
-write_rds(here(paste0("obj/",
-                 round(AIC(.)[2]),
-                 "-",
-                 round(summary(.)$concordance[1]*100),
-                 "-",
-                 "lasmodel",
-                 "-",
-                 seed,
-                 ".rds")))
-
+function(x){
+  x <- summary(x)
+  pval<-signif(x$wald["pvalue"],
+                  digits=2)
+  wald<-signif(x$wald["test"],
+                    digits=2)
+  beta<-signif(x$coef[,1],
+               digits=2);#coeficient beta
+  HR <-signif(x$coef[,2],
+              digits=2);#exp(beta)
+  HR_CI_lower <- signif(x$conf.int[,"lower .95"], 2)
+  HR_CI_upper <- signif(x$conf.int[,"upper .95"],2)
+  HR_CI <- paste0(HR,
+               " (",
+               HR_CI_lower,
+               "-",
+               HR_CI_upper,
+               ")")
+  res<-c(beta,
+         HR,
+         wald,
+         pval)
+  names(res)<-c("beta",
+                "HR (95% CI for HR)",
+                "wald test", 
+                "p value")
+  return(res) } ->
+get_modstats
+  #return(exp(cbind(coef(x),confint(x))))
+library('lime')
+explainer <- lime(samp, as_regressor(cox))#, bin_continuous = TRUE, quantile_bins = FALSE)
+explanation <- explain(samp, explainer, n_features = 30)
+# Only showing part of output for better printing
+aaexplanation[, 2:9]
+explanation[, 2:9]
+#
+#signif(summary(cox)$wald["pvalue"], digits=2)
+#summary(cox)$p.value
 #update(form, paste("~ ridge(", vrs2, ', theta = 10 )'))
 #update(form, paste("~ lasso(", vrs2, ', theta = 10 )'))
