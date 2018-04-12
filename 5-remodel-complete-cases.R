@@ -60,6 +60,7 @@ las <-  svycoxph(update(form,
 get_con = function(x) round(summary(x)$concordance[1]*100)
 
 seed=1
+
 data_frame(type = c('coxph', 'ridge', 'lasso'),
            seed = rep(seed,3),
            aic = AIC(cox, rid, las)[,2],
@@ -68,12 +69,13 @@ data_frame(type = c('coxph', 'ridge', 'lasso'),
                            get_con(las)),
            betas = c(list(coef(cox)),
                      list(coef(rid)),
-                     list(coef(las)))) %>%
+                     list(coef(las)))) ->
+df
+
+%>%
 write_rds(here(paste0("obj/",
                  seed,
                  ".rds")))
-install.packages('magick')
-install.packages('lime')
 library('lime')
 signif(summary(cox)$coef[,1], digits=2)
 signif(summary(cox)$coef[,2], digits=2)
@@ -109,12 +111,6 @@ function(x){
   return(res) } ->
 get_modstats
   #return(exp(cbind(coef(x),confint(x))))
-library('lime')
-explainer <- lime(samp, as_regressor(cox))#, bin_continuous = TRUE, quantile_bins = FALSE)
-explanation <- explain(samp, explainer, n_features = 30)
-# Only showing part of output for better printing
-aaexplanation[, 2:9]
-explanation[, 2:9]
 #
 #signif(summary(cox)$wald["pvalue"], digits=2)
 #summary(cox)$p.value
