@@ -1,8 +1,6 @@
 
 ---
-title: Lethal Cancer Risk Factors in NHANES
-subtitle: Interrogating the Human Exposome for Cancer Mortality Risk Factors in the National
-Health and Nutrition Examination Survey
+title: Exploratory Analysis of Factors Associated with Cancer Mortality in the National Health and Nutrition Examination Survey Dataset
 author:
 - Martin Skarzynski
 - Prof. Elizabeth Platz
