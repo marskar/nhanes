@@ -4,12 +4,8 @@ library(dplyr)
 library(ggplot2)
 library(purrr)
 
-dat <- read_rds(here("dat/4-model-complete-cases.rds"))
-dat %>%
-    head
-
-
-dat %>%
+dat_quad <-
+    read_rds(here("dat/4-model-complete-cases.rds")) %>%
     mutate(quad =
            as.factor(
            case_when(concordance > 78 & aic < 14480 ~ 1,
@@ -17,8 +13,7 @@ dat %>%
                      concordance <= 78 & aic < 14480 ~ 3,
                      concordance <= 78 & aic >= 14480 ~ 4
                      ))
-           ) ->
-dat_quad
+           )
 
 dat_quad %>%
     ggplot(aes(x = aic,
@@ -50,15 +45,36 @@ data_frame(name = names(flatten(dat[[1]])),
 
 df_coef <- map_dfr(seq(4), get_dfs)
 
-
-df_coef %>% select(
+df_coef %>%
+    select(-starts_with("HR_CI")) %>%
     ggplot(aes(x = log2(HR),
                y = -log10(coef_pvalue),
                colour = as.factor(quad))) +
-           geom_point(alpha = 0.5) +
-           theme_minimal() +
            labs(colour = "Quadrant",
                 x = 'log2 Hazard Ratio',
                 y = '-log10 p-value') +
-           guides(colour = guide_legend(override.aes = list(alpha = 1))) +
-geom_text(aes(label=name),hjust=0, vjust=0)
+           geom_point(alpha = 1) +
+           geom_text(aes(label=name),
+                     alpha = 0.75,
+                     check_overlap = TRUE) +
+           theme_minimal()
+
+#df_coef %>%
+       #    select(-starts_with("HR_CI")) %>%
+       #    group_by(name, quad) %>%
+       #    summarise(mean_HR = mean(HR),
+       #              mean_pval = mean(coef_pvalue),
+       #              n = n()) %>%
+       #    ggplot(aes(x = log2(mean_HR),
+       #               y = -log10(mean_pval),
+       #               colour = as.factor(quad),
+       #               size = n,
+       #               label = name)) +
+       #           geom_point(alpha = 0.5) +
+       #           theme_minimal() +
+       #           labs(colour = "Quadrant",
+       #                x = 'log2 Hazard Ratio',
+       #                y = '-log10 p-value') +
+       #           guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+       #           geom_text()
+
