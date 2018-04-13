@@ -94,6 +94,7 @@ df_sig %>%
     mutate_if(is.integer, as.factor) %>%
     ggplot(aes(ord_name,fill=quad)) +
     geom_bar(position = position_stack(reverse = TRUE)) +
+    scale_y_continuous(expand = c(0,0)) +
     coord_flip() +
                   theme_minimal() +
     theme(legend.position = "top") +
