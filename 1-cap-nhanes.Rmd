@@ -19,13 +19,13 @@ knitr::opts_chunk$set(echo = TRUE, include = FALSE)
 ```
 ## Abstract
 
-Context:
+Context: Large epidemiologic cohort studies, such as the National Health and Nutrition Examination Survey (NHANES), collect high-dimensional data that allow for examination of multiple exposures in relation to a given outcome.
 
-Objective: To address low adolescent HPV vaccination rates, the President’s Cancer Panel called for increasing communication to reduce missed vaccination opportunities. Therefore, we examined the association between receiving a provider recommendation for the HPV vaccine and subsequent initiation of the vaccine series among teens aged 13-17. Furthermore, we sought to identify important subgroups less likely to by impacted by providerrecommendations.
+Objective: To explore the exposures measured in the Third National Health and Nutrition Examination Survey (NHANES III) dataset in search of factors associated with cancer mortality data obtained from the National Death Index (NDI) and to assess methods for lethal cancer risk prediction model variable selection.
 
-Design:
+Design, Setting and Participants: NHANES III collected data on 33,994 participants aged 2 months and older from 1988 to 1994 the United States. The data include Interview, Medical Examination, and Laboratory components and were collected and linked with Mortality data from NDI death certificate records by the National Center for Health Statistics (NCHS) of the Centers for Disease Control and Prevention (CDC).
 
-Setting:
+Setting: 
 
 Participants: We analyzed data on 16404 patients from the CDC’s NHANES III website (https://wwwn.cdc.gov/nchs/nhanes/nhanes3/default.aspx 2014 National Immunization Survey for Teens (n=19,125). Log-binomial regression models assessed prevalence ratios of vaccination among teens whose parents reported receiving a provider recommendation compared to those who did not. Chi-square analyses identified differences in groups with/without provider recommendation.
 
