@@ -44,9 +44,14 @@ data_frame(name = names(flatten(dat[[1]])),
 }
 
 df_coef <- map_dfr(seq(4), get_dfs)
-
+0.1^323
 df_coef %>%
     select(-starts_with("HR_CI")) %>%
+    filter(!between(HR, .9, 1.1)) %>%
+    mutate(coef_pvalue = if_else(near(coef_pvalue, 0),
+                                 coef_pvalue+0.1^17,
+                                 coef_pvalue)) %>%
+#    arrange(coef_pvalue)
     ggplot(aes(x = log2(HR),
                y = -log10(coef_pvalue),
                colour = as.factor(quad))) +
@@ -56,8 +61,10 @@ df_coef %>%
            geom_point(alpha = 1) +
            geom_text(aes(label=name),
                      alpha = 0.75,
+                     vjust = 1.2,
                      check_overlap = TRUE) +
-           theme_minimal()
+           theme_minimal() +
+           theme(plot.margin = margin(t = -15))
 
 #df_coef %>%
        #    select(-starts_with("HR_CI")) %>%
