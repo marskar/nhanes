@@ -5,8 +5,20 @@ library(ggplot2)
 library(purrr)
 
 #read in dataset created by script 4
-dat_quad <-
-    read_rds(here("dat/4-model-complete-cases.rds")) %>%
+dat_quad <- read_rds(here("dat/4-model-complete-cases.rds"))
+
+medians <- dat_quad %>%
+    select(type, aic, concordance) %>%
+    group_by(type) %>%
+    summarise(maic = median(aic),
+              mcon = median(concordance))
+
+medians %>% filter(type == 'coxph') %>% select(maic)
+
+    filter(concordance > median(concordance))
+    mutate_if(.tbl, .predicate, .funs)
+    mutate(rid_median_aic = )
+
     mutate(quad =
            as.factor(
            case_when(concordance > median(concordance) &
