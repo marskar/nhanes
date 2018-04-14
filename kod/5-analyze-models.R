@@ -4,24 +4,7 @@ library(dplyr)
 library(ggplot2)
 library(purrr)
 
-#read in dataset created by script 4
-dat_quad <- read_rds(here("dat/4-model-complete-cases.rds"))
-
-medians <- dat_quad %>%
-    select(type, aic, concordance) %>% group_by(type) %>%
-    summarise(maic = median(aic),
-              mcon = median(concordance))
-
-    select(type, aic) %>% filter(type == 'coxph') %>% median
-medians %>% filter(type == 'coxph') %>% select(maic)
-quote
-
-get_string <- function(string){
-#model_type <- enquo(string)
-deparse(substitute( string ))
-}
-get_string(zyx)
-
+#define function needed to calculate median model stats
 get_median <- function(x, model_type, model_stat){
     model_type <- deparse(substitute(model_type))
     model_stat <- enquo(model_stat)
@@ -34,26 +17,39 @@ get_median <- function(x, model_type, model_stat){
         as.numeric
 }
 
-dat_quad %>%
+#read in dataset created by script 4
+dat_quad <- read_rds(here("dat/4-model-complete-cases.rds")) %>%
     rename(con = concordance) %>%
     mutate(quad =
            as.factor(
            case_when(type == "ridge" &
-                     con > get_median(.,
+                     con >= get_median(.,
                                       ridge,
                                       con) &
-                     aic < get_median(.,
-                                      ridge,
-                                      aic) ~ 1,
-                     con > median(con) &
+                     aic < median(aic) ~ 1,
+                     type == "coxph" &
+                     con >= get_median(.,
+                                      coxph,
+                                      con) &
                      aic >= median(aic) ~ 2,
-                     con <= median(con) &
+                     type == "ridge" &
+                     con < get_median(.,
+                                      ridge,
+                                      con) &
                      aic < median(aic) ~ 3,
-                     con <= median(con) &
-                     aic >= median(aic) ~ 4
+                     type == "coxph" &
+                     con < get_median(.,
+                                      coxph,
+                                      con) &
+                     aic >= median(aic) ~ 4,
                      ))
-           ) %>%
-glimpse
+           )
+#table(dat_quad$quad)
+# 
+#  1  2  3  4 
+# 51 51 49 49 
+#sum( table(dat_quad$quad) )
+# [1] 200
 
 # Figure 1
 dat_quad %>%
