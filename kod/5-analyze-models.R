@@ -147,3 +147,13 @@ df_sig %>%
 
 ggsave(here("img/3-featbar.pdf"))
 ggsave(here("img/3-featbar.png"))
+
+# Table 1
+df_sig %>%
+    group_by(name) %>%
+    rename(Name = name) %>%
+    summarise(n = n()) %>%
+    arrange(desc(n)) %>%
+    
+    knitr::kable()
+
