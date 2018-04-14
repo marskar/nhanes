@@ -17,9 +17,7 @@ csl: bib/biomed-central.csl
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, include = TRUE, warning = FALSE, message = FALSE)
 ```
-```{r init_captioner, include=FALSE}
-fig_num <- captioner::captioner()
-```
+
 ## Abstract
 
 **Context:** Large epidemiologic cohort studies, such as the National Health and Nutrition Examination Survey (NHANES), collect copious high-dimensional data that allow for examination of multiple exposures in relation to a given outcome.
@@ -40,18 +38,17 @@ fig_num <- captioner::captioner()
 ## Methods
 ## Results
 
-![Scatter plot showing the concordance (y-axis) and AIC (x-axis) values of 200 Cox models](img/1-quad.pdf){width=100%}
+H~2~O
+H^2^O
+
+![Concordance (y-axis) and AIC (x-axis) values of 200 Cox models with (triangle) and without (circle) ridge penalties split into quadrants based on](img/1-quad.pdf){width=100%}
+
+![Scatter plot showing the concordance (y-axis) and AIC (x-axis) values of 200 Cox models](img/2-volcano.pdf){width=100%}
+
+![Scatter plot showing the concordance (y-axis) and AIC (x-axis) values of 200 Cox models](img/2-volcano.pdf){width=100%}
 
 @Islami_2018
 
-
-`r knitr::include_graphics('img/2-volcano.pdf')`
-
-`r fig_num('volcano', "caption2")`
-
-`r knitr::include_graphics('img/3-featbar.pdf')`
-
-`r fig_num('varbar', "caption3")`
 
 ## Discussion
 Cancer susceptibility is influenced by modifiable and non-modifiable factors. Major modifiable cancer risk factors include body mass index (BMI) and cigarette use, whereas non-modifiable factors include single nucleotide polymorphisms (SNPs) and family history of disease. According to a 2018 study by Islami and colleagues [1], modifiable risk factors are responsible for 42% of all cancer cases and 45% of all cancer deaths. This finding suggests that cancer prevention strategies that target modifiable risk factors have the potential to almost halve cancer incidence and mortality in the United States. A near two-fold reduction in cancer cases and deaths may seem far-fetched, but cancer incidence and mortality in United Status have been declining by ~1.5% every year from 2009-2014 and 2001-2015, respectively [2]. Taken together, these data indicate that while tremendous progress has been made, there is still great potential for cancer prevention approaches to decrease cancer incidence and mortality.
