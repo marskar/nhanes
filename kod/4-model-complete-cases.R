@@ -42,17 +42,17 @@ get_modelstats <- function(seed){
                           collapse=', '))
 
     set.seed(seed)
-    train <- sample(x = seq(nrow(samp)),
-                   size = round(nrow(samp)*.7))
+    #train <- sample(x = seq(nrow(samp)),
+    #               size = round(nrow(samp)*.7))
     # generate cox models without and with penalties
 
     cox <- svycoxph(update(form,
                            paste("~ ", vrs)),
-                    design = des, data = samp[train,])
+                    design = des, data = samp)
 
     rid <- svycoxph(update(form,
                            paste("~ ridge(", vrs2, ')')),
-                    design = des, data = samp[train,])
+                    design = des, data = samp)
 
     # define functions needed to create first table
     get_con <- function(x) {

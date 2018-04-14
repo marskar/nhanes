@@ -9,10 +9,14 @@ dat_quad <-
     read_rds(here("dat/4-model-complete-cases.rds")) %>%
     mutate(quad =
            as.factor(
-           case_when(concordance > 78 & aic < 14480 ~ 1,
-                     concordance > 78 & aic >= 14480 ~ 2,
-                     concordance <= 78 & aic < 14480 ~ 3,
-                     concordance <= 78 & aic >= 14480 ~ 4
+           case_when(concordance > median(concordance) &
+                     aic < median(aic) ~ 1,
+                     concordance > median(concordance) &
+                     aic >= median(aic) ~ 2,
+                     concordance <= median(concordance) &
+                     aic < median(aic) ~ 3,
+                     concordance <= median(concordance) &
+                     aic >= median(aic) ~ 4
                      ))
            )
 
@@ -20,14 +24,18 @@ dat_quad <-
 dat_quad %>%
     ggplot(aes(x = aic,
                y = concordance,
-               colour = quad,
-               shape = type)) +
-           geom_point() +
+               colour = quad)) +
+geom_point(aes(shape = factor(type)),
+           size = 3,
+           stroke = 1) +
+scale_shape(solid = FALSE) +
            theme_minimal() +
            labs(colour = "Quadrant",
                 x = 'Akaike Information Criterion',
                 y = 'Concordance',
                 shape = "Model Type")
+ggsave(here("img/quad.pdf"))
+ggsave(here("img/quad.png"))
 
 #define function to flatten dat_quad
 get_dfs <- function(quadrant) {
@@ -64,7 +72,9 @@ df_coef %>%
            labs(colour = "Quadrant",
                 x = 'log2 Hazard Ratio',
                 y = '-log10 p-value') +
-           geom_point(alpha = 0.75) +
+           geom_point(alpha = 0.75,
+                      size = 1,
+                      stroke = 1) +
            guides(colour = guide_legend(override.aes = list(alpha = 1))) +
            geom_text(aes(label=name),
                      alpha = 0.75,
@@ -74,6 +84,8 @@ df_coef %>%
            theme_minimal() +
            theme(plot.margin = margin(t = -15))
 
+ggsave(here("img/volcano.pdf"))
+ggsave(here("img/volcano.png"))
 
 #filter out p-values greater than .1^10
 df_sig <- df_coef %>%
@@ -99,5 +111,8 @@ df_sig %>%
                   theme_minimal() +
     theme(legend.position = "top") +
                   labs(fill = "Quadrant",
-                       x = 'Feature',
+                       x = 'Variable Name',
                        y = 'Count')
+
+ggsave(here("img/featbar.pdf"))
+ggsave(here("img/featbar.png"))
