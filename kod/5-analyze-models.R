@@ -8,34 +8,57 @@ library(purrr)
 dat_quad <- read_rds(here("dat/4-model-complete-cases.rds"))
 
 medians <- dat_quad %>%
-    select(type, aic, concordance) %>%
-    group_by(type) %>%
+    select(type, aic, concordance) %>% group_by(type) %>%
     summarise(maic = median(aic),
               mcon = median(concordance))
 
+    select(type, aic) %>% filter(type == 'coxph') %>% median
 medians %>% filter(type == 'coxph') %>% select(maic)
+quote
 
-    filter(concordance > median(concordance))
-    mutate_if(.tbl, .predicate, .funs)
-    mutate(rid_median_aic = )
+get_string <- function(string){
+#model_type <- enquo(string)
+deparse(substitute( string ))
+}
+get_string(zyx)
 
+get_median <- function(x, model_type, model_stat){
+    model_type <- deparse(substitute(model_type))
+    model_stat <- enquo(model_stat)
+    x %>%
+        select(type, !!model_stat) %>%
+        group_by(type) %>%
+        summarise(model_median = median(!!model_stat)) %>%
+        filter(type == model_type)%>%
+        select(model_median) %>%
+        as.numeric
+}
+
+dat_quad %>%
+    rename(con = concordance) %>%
     mutate(quad =
            as.factor(
-           case_when(concordance > median(concordance) &
-                     aic < median(aic) ~ 1,
-                     concordance > median(concordance) &
+           case_when(type == "ridge" &
+                     con > get_median(.,
+                                      ridge,
+                                      con) &
+                     aic < get_median(.,
+                                      ridge,
+                                      aic) ~ 1,
+                     con > median(con) &
                      aic >= median(aic) ~ 2,
-                     concordance <= median(concordance) &
+                     con <= median(con) &
                      aic < median(aic) ~ 3,
-                     concordance <= median(concordance) &
+                     con <= median(con) &
                      aic >= median(aic) ~ 4
                      ))
-           )
+           ) %>%
+glimpse
 
 # Figure 1
 dat_quad %>%
     ggplot(aes(x = aic,
-               y = concordance,
+               y = con,
                colour = quad)) +
 geom_point(aes(shape = factor(type)),
            size = 3,
