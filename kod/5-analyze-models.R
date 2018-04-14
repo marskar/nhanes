@@ -34,8 +34,8 @@ scale_shape(solid = FALSE) +
                 x = 'Akaike Information Criterion',
                 y = 'Concordance',
                 shape = "Model Type")
-ggsave(here("img/quad.pdf"))
-ggsave(here("img/quad.png"))
+ggsave(here("img/1-quad.pdf"))
+ggsave(here("img/1-quad.png"))
 
 #define function to flatten dat_quad
 get_dfs <- function(quadrant) {
@@ -84,8 +84,8 @@ df_coef %>%
            theme_minimal() +
            theme(plot.margin = margin(t = -15))
 
-ggsave(here("img/volcano.pdf"))
-ggsave(here("img/volcano.png"))
+ggsave(here("img/2-volcano.pdf"))
+ggsave(here("img/2-volcano.png"))
 
 #filter out p-values greater than .1^10
 df_sig <- df_coef %>%
@@ -114,5 +114,5 @@ df_sig %>%
                        x = 'Variable Name',
                        y = 'Count')
 
-ggsave(here("img/featbar.pdf"))
-ggsave(here("img/featbar.png"))
+ggsave(here("img/3-featbar.pdf"))
+ggsave(here("img/3-featbar.png"))
