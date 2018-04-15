@@ -7,7 +7,7 @@ library(tidyr)
 library(survey)
 library(purrr)
 
-# this function takes in an integer as an argument
+# this function takes in two integers as an argument
 # this function returns a dataframe
 get_modelstats <- function(seed, size){
 
@@ -36,7 +36,7 @@ get_modelstats <- function(seed, size){
     # create left side of equations
     form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
     # create right sides of equations
-    if(ncol(samp)==7){
+    if(size == 1 & ncol(samp)==7){
     vrs <- as.name(names(samp)[7])
     vrs <- as.name(names(samp)[7])
     } else{
@@ -80,6 +80,7 @@ get_modelstats <- function(seed, size){
     model_list <- list(cox, rid)
 
     data_frame(seed = rep(seed,2),
+               size = size,
                type = c('coxph', 'ridge'),
                aic = AIC(cox, rid)[,"AIC"],
                concordance =  map_dbl(model_list,
@@ -92,10 +93,19 @@ get_modelstats <- function(seed, size){
                                   get_HR_CI_upper),
                coef_pvalue =  map(model_list,
                                  get_coef_pvalue))
+print(paste0("Created a df with ", size, " variables using seed ", seed))
 }
-get_modelstats(seed=1, size=1)
-map_dfr(seq(100), get_modelstats)
 
-map_dfr(seq(100), get_modelstats) %>%
-write_rds(here(paste0("dat/4-model-complete-cases.rds")))
+#save an object with 1000 models
+
+map_sizes <- function(seed){
+map2_dfr(.x = seed,
+         .y = seq(48),
+         get_modelstats)
+}
+map_dfr(seq(100), map_sizes) %>%
+write_rds(here(paste0("dat/6-model-diff-sizes.rds")))
+
+df <- read_rds(here("dat/6-model-diff-sizes.rds"))
+df
 
