@@ -31,7 +31,6 @@ mutate(canc_mort =
                true = 1, false = 0)) ->
 dat
 
-dat %>%
 
 # how many exposures 1
 ncol(dat)-dat %>%
@@ -40,8 +39,9 @@ ncol(dat)-dat %>%
            starts_with("canc_"),
            starts_with("UCOD"),
            contains("STAT"),
+           starts_with("WTP"),
            starts_with("SEQ")) %>%
-ncol(dat)
+ncol()
 
 # how many exposures final
 dat <- read_rds(here('dat/3-clean-complete-cases.rds'))

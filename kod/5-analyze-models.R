@@ -150,10 +150,17 @@ ggsave(here("img/3-featbar.png"))
 
 # Table 1
 df_sig %>%
-    group_by(name) %>%
+    group_by(quad) %>%
     rename(Name = name) %>%
     summarise(n = n()) %>%
     arrange(desc(n)) %>%
-    
     knitr::kable()
 
+# Table 2
+df_sig %>%
+    group_by(name) %>%
+    rename(Name = name) %>%
+    summarise(medianHR = median(HR),
+              n = n()) %>%
+    arrange(desc(n)) %>%
+    knitr::kable()
