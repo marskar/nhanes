@@ -35,11 +35,12 @@ library(readr)
 
 **Main Outcome Measure:** Among the 16404 patients, there were 964 cancer deaths and 280891 total years of follow-up since the initial Interview data were collected. The cancer deaths and follow-up time were used as the outcome (survival) in Cox proportional hazards regression analysis.
 
-**Results:** We fit 200 Cox proportional hazards models with and without ridge regularization to randomly selected subsets of 30 variables and divided the models into 4 groups of roughly equal size according to their Akaike Information Criterion (AIC) and concordance values. Highly significant variables (p < 1e-10) were most common in the group with the lowest AIC and highest concordance and least common in the group with highest AIC and lowest concordance. Interestingly, some of these highly significant variables showed up only in models with above-median corcordance values or only in ridge-penalized models with below-median AIC values. The The highly significant variables that showed up most frequently in the models we trained were mostly related to advanced age and and smoking status. 
+**Results:** We fit 9600 Cox proportional hazards models with and without ridge regularization to randomly selected subsets of up to 48 variables and divided the models into 4 groups of roughly equal size according to their Akaike Information Criterion (AIC) and concordance values. Controlling for model size, highly significant variables (p < 1e-10) were most common in the group with the lowest AIC and highest concordance and least common in the group with highest AIC and lowest concordance. Interestingly, some of these highly significant variables appeared only in models with above-median corcordance values or only in ridge-penalized models with below-median AIC values. Based on variable description, we selected a subset (exact number) of the most frequent highly significant variables and trained a final model that performed well compared to the randomly generated models.
 
-As expected, the 100 Cox models with ridge penalties all had lower AIC values than the 100 non-penalized models and ridge-penalized variables tended to have lower hazard ratios. 
 
 **Conclusions:** 
+
+As expected, the 100 Cox models with ridge penalties all had lower AIC values than the 100 non-penalized models and ridge-penalized variables tended to have lower hazard ratios. 
 
 ## Introduction
 ## Methods
