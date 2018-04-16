@@ -75,6 +75,6 @@ Table needs to be updated.
 |HAT10    |     1.558|  6|Past month, did you do other dancing|
 |HSFSIZER |     0.923|  5|Family size (persons in family)|
 |HAC1A    |     0.604|  4|Doctor ever told you had: arthritis|
-: Description of Highly Significant Variables
+: Description of Highly Significant Variables that Appeared Most Frequently
 
 ## Discussion

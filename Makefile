@@ -3,3 +3,6 @@
 
 1-cap-nhanes.pdf: 1-cap-nhanes.Rmd
 	Rscript -e "rmarkdown::render('1-cap-nhanes.Rmd','pdf_document')"
+
+1-cap-nhanes.docx: 1-cap-nhanes.Rmd
+	Rscript -e "rmarkdown::render('1-cap-nhanes.Rmd','word_document')"
