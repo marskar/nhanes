@@ -16,12 +16,28 @@ get_modelstats <- function(seed, size){
     #move PERMTH_INT and canc_mort to the beginning
     #sample a tenth of the dataset columns
     read_rds(here('dat/3-clean-complete-cases.rds')) %>%
-      select(-SEQN) %>%
-      select(PERMTH_INT,
-             canc_mort,
-             SDPPSU6,
-             SDPSTRA6,
-             WTPFQX6,
+      select(-SEQN,
+             -HAN9, #remove age variables
+             -HAQ7,
+             -HAT29,
+             -HAJ0,
+	     -WTPXRP2,
+	     -starts_with("WTPQRP")
+             ) %>%
+      select(PERMTH_INT, #person time in months
+             canc_mort, #event
+             SDPPSU6, #PSU
+             SDPSTRA6, #Stratification
+             WTPFQX6, #Weights
+             DMAETHNR, #Ethnicity
+             HAT16, #In the past month, did you lift weights
+             HAK9, # times per night you get up to urinate
+             HSAITMOR, #Age in months at interview (screener)
+             HAQ1, #Describe natural teeth: excellent...poor
+             HAR1, #Have you smoked 100+ cigarettes in life
+             HAT2, #In the past month, did you jog or run
+             HAT18, #In the past month, any other exercises, sports
+             HAB1, #Would you say your health in general is excellent, very good, good, fair, or poor?
              everything()[sample(seq(ncol(.)),
                                  round(size))]) ->
     samp
@@ -78,7 +94,7 @@ get_modelstats <- function(seed, size){
         coefs <- summary(x)$coef
         coefs[,ncol(coefs)]
     }
-    model_list <- try(list(cox, rid))
+    model_list <- try(list(cox,rid))
 
 
     try(data_frame(seed = rep(seed,2),
@@ -101,8 +117,9 @@ get_modelstats <- function(seed, size){
 
 map_sizes <- function(seed){
 map2_dfr(.x = seed,
-         .y = seq(48),
+         .y = seq(40),
          get_modelstats)
 }
 future_map_dfr(seq(10), map_sizes) %>%
-write_rds(here(paste0("dat/6-model-diff-sizes.rds")))
+write_rds(here(paste0("dat/7-model-second-run.rds")))
+

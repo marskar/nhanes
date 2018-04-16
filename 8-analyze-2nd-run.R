@@ -19,7 +19,7 @@ get_median <- function(x, model_type, model_stat){
 }
 
 #read in dataset created by script 4
-dat_quad <- read_rds(here("dat/6-model-diff-sizes.rds")) %>%
+dat_quad <- read_rds(here("dat/7-model-second-run.rds")) %>%
     rename(con = concordance) %>%
     mutate(quad =
            as.factor(
