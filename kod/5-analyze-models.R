@@ -16,55 +16,105 @@ get_median <- function(x, model_type, model_stat){
         select(model_median) %>%
         as.numeric
 }
-
+glimpse(dat_quad)
+get_median(dat_quad, coxph, aic)
+get_median(dat_quad, ridge, aic)
+get_median(dat_quad, coxph, con)
+get_median(dat_quad, ridge, con)
 #read in dataset created by script 4
-dat_quad <- read_rds(here("dat/4-model-complete-cases.rds")) %>%
+dat_quad <- read_rds(here("dat/6-model-diff-sizes.rds")) %>%
     rename(con = concordance) %>%
     mutate(quad =
            as.factor(
            case_when(type == "ridge" &
-                     con >= get_median(.,
+                     con > get_median(.,
                                       ridge,
                                       con) &
-                     aic < median(aic) ~ 1,
+                     aic < get_median(.,
+                                      ridge,
+                                      aic) ~ "Best Ridge Models",
                      type == "coxph" &
-                     con >= get_median(.,
+                     con > get_median(.,
+                                       coxph,
+                                       con) &
+                     aic < get_median(.,
                                       coxph,
-                                      con) &
-                     aic >= median(aic) ~ 2,
+                                      aic) ~ "Best Cox Models",
                      type == "ridge" &
-                     con < get_median(.,
+                     con > get_median(.,
                                       ridge,
                                       con) &
-                     aic < median(aic) ~ 3,
+                     aic >= get_median(.,
+                                      ridge,
+                                      aic) ~ "High Concordance, High AIC Ridge Models",
                      type == "coxph" &
-                     con < get_median(.,
+                     con > get_median(.,
                                       coxph,
                                       con) &
-                     aic >= median(aic) ~ 4,
+                     aic >= get_median(.,
+                                      coxph,
+                                      aic) ~  "High Concordance, High AIC Cox Models",
+                     type == "ridge" &
+                     con <= get_median(.,
+                                      ridge,
+                                      con) &
+                     aic < get_median(.,
+                                      ridge,
+                                      aic) ~  "Low Concordance, Low AIC Ridge Models",
+                     type == "coxph" &
+                     con <= get_median(.,
+                                      coxph,
+                                      con) &
+                     aic < get_median(.,
+                                      coxph,
+                                      aic) ~   "Low Concordance, Low AIC Cox Models",
+                     type == "ridge" &
+                     con <= get_median(.,
+                                      ridge,
+                                      con) &
+                     aic >= get_median(.,
+                                      ridge,
+                                      aic) ~ "Worst Ridge Models",
+                     type == "coxph" &
+                     con <= get_median(.,
+                                      coxph,
+                                      con) &
+                     aic >= get_median(.,
+                                      coxph,
+                                      aic) ~ "Worst Cox Models"
                      ))
            )
-#table(dat_quad$quad)
+table(dat_quad$quad)
+table(dat_quad$type)
 # 
 #  1  2  3  4 
 # 51 51 49 49 
-#sum( table(dat_quad$quad) )
+
+dat_quad %>%
+    group_by(type, quad) %>%
+    summarise(n=n())
+
+sum( table(dat_quad$quad) )
 # [1] 200
 
 # Figure 1
 dat_quad %>%
     ggplot(aes(x = aic,
                y = con,
+               size = size,
                colour = quad)) +
 geom_point(aes(shape = factor(type)),
-           size = 3,
+           #size = 3,
            stroke = 1) +
 scale_shape(solid = FALSE) +
            theme_minimal() +
-           labs(colour = "Quadrant",
+           labs(
                 x = 'Akaike Information Criterion',
                 y = 'Concordance',
-                shape = "Model Type")
+                size = "Number of Variables",
+                shape = "Model Type",
+                colour = "Description")
+
 ggsave(here("img/1-quad.pdf"))
 ggsave(here("img/1-quad.png"))
 
