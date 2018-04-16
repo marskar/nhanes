@@ -11,91 +11,68 @@ get_median <- function(x, model_type, model_stat){
     x %>%
         select(type, !!model_stat) %>%
         group_by(type) %>%
-        summarise(model_median = median(!!model_stat)) %>%
-        filter(type == model_type)%>%
+        summarise(model_median =
+                  median(!!model_stat)) %>%
+        filter(type == model_type) %>%
         select(model_median) %>%
         as.numeric
 }
-glimpse(dat_quad)
-get_median(dat_quad, coxph, aic)
-get_median(dat_quad, ridge, aic)
-get_median(dat_quad, coxph, con)
-get_median(dat_quad, ridge, con)
+
 #read in dataset created by script 4
 dat_quad <- read_rds(here("dat/6-model-diff-sizes.rds")) %>%
     rename(con = concordance) %>%
     mutate(quad =
            as.factor(
            case_when(type == "ridge" &
-                     con > get_median(.,
-                                      ridge,
-                                      con) &
-                     aic < get_median(.,
-                                      ridge,
-                                      aic) ~ "Best Ridge Models",
+                     con > median(con) &
+                     aic < median(aic) ~ 1,
                      type == "coxph" &
-                     con > get_median(.,
-                                       coxph,
-                                       con) &
-                     aic < get_median(.,
-                                      coxph,
-                                      aic) ~ "Best Cox Models",
+                     con > median(con) &
+                     aic < median(aic) ~ 1,
                      type == "ridge" &
-                     con > get_median(.,
-                                      ridge,
-                                      con) &
-                     aic >= get_median(.,
-                                      ridge,
-                                      aic) ~ "High Concordance, High AIC Ridge Models",
+                     con > median(con) &
+                     aic >= median(aic) ~ 2,
                      type == "coxph" &
-                     con > get_median(.,
-                                      coxph,
-                                      con) &
-                     aic >= get_median(.,
-                                      coxph,
-                                      aic) ~  "High Concordance, High AIC Cox Models",
+                     con > median(con) &
+                     aic >= median(aic) ~ 2,
                      type == "ridge" &
-                     con <= get_median(.,
-                                      ridge,
-                                      con) &
-                     aic < get_median(.,
-                                      ridge,
-                                      aic) ~  "Low Concordance, Low AIC Ridge Models",
+                     con <= median(con) &
+                     aic < median(aic) ~ 3,
                      type == "coxph" &
-                     con <= get_median(.,
-                                      coxph,
-                                      con) &
-                     aic < get_median(.,
-                                      coxph,
-                                      aic) ~   "Low Concordance, Low AIC Cox Models",
+                     con <= median(con) &
+                     aic < median(aic) ~ 3,
                      type == "ridge" &
-                     con <= get_median(.,
-                                      ridge,
-                                      con) &
-                     aic >= get_median(.,
-                                      ridge,
-                                      aic) ~ "Worst Ridge Models",
+                     con <= median(con) &
+                     aic >= median(aic) ~ 4,
                      type == "coxph" &
-                     con <= get_median(.,
-                                      coxph,
-                                      con) &
-                     aic >= get_median(.,
-                                      coxph,
-                                      aic) ~ "Worst Cox Models"
+                     con <= median(con) &
+                     aic >= median(aic) ~ 4
                      ))
            )
+
 table(dat_quad$quad)
+# 
+#   1   2   3   4 
+# 111 349 369 131 
 table(dat_quad$type)
 # 
 #  1  2  3  4 
 # 51 51 49 49 
 
-dat_quad %>%
-    group_by(type, quad) %>%
-    summarise(n=n())
+dat_quad %>% group_by(type, quad) %>% summarise(n=n())
+# # A tibble: 8 x 3
+# # Groups:   type [?]
+#   type  quad      n
+#   <chr> <fct> <int>
+# 1 coxph 1        21
+# 2 coxph 2       232
+# 3 coxph 3       118
+# 4 coxph 4       109
+# 5 ridge 1        90
+# 6 ridge 2       117
+# 7 ridge 3       251
+# 8 ridge 4        22
 
-sum( table(dat_quad$quad) )
-# [1] 200
 
 # Figure 1
 dat_quad %>%
@@ -113,13 +90,13 @@ scale_shape(solid = FALSE) +
                 y = 'Concordance',
                 size = "Number of Variables",
                 shape = "Model Type",
-                colour = "Description")
+                colour = "Quadrant")
 
 ggsave(here("img/1-quad.pdf"))
 ggsave(here("img/1-quad.png"))
 
 #define function to flatten dat_quad
-get_dfs <- function(quadrant) {
+dfs <- function(quadrant) {
 dat <- dat_quad %>%
         filter(quad == quadrant) %>%
             select(starts_with('h'),
@@ -136,7 +113,7 @@ data_frame(name = names(flatten(dat[[1]])),
 }
 
 #flatten dat_quad
-df_coef <- map_dfr(seq(4), get_dfs)
+df_coef <- map_dfr(seq(4), dfs)
 #remove ridge from name
 df_coef$name <- gsub("ridge\\(|\\)", "", df_coef$name)
 
