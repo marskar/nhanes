@@ -136,8 +136,8 @@ df_sig %>%
                        x = 'Variable Name',
                        y = 'Count')
 
-ggsave(here("img/3-featbar.pdf"))
-ggsave(here("img/3-featbar.png"))
+ggsave(here("img/3-varbar.pdf"))
+ggsave(here("img/3-varbar.png"))
 
 # Table 1
 df_sig %>%

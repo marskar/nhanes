@@ -1,5 +1,5 @@
 #!/usr/local/bin Rscript
-
+installed.packages("furrr")
 library(here)
 library(readr)
 library(dplyr)
@@ -52,13 +52,13 @@ get_modelstats <- function(seed, size){
     #               size = round(nrow(samp)*.7))
     # generate cox models without and with penalties
 
-    cox <- svycoxph(update(form,
+    cox <- try(svycoxph(update(form,
                            paste("~ ", vrs)),
-                    design = des, data = samp)
+                    design = des, data = samp))
 
-    rid <- svycoxph(update(form,
+    rid <- try(svycoxph(update(form,
                            paste("~ ridge(", vrs2, ')')),
-                    design = des, data = samp)
+                    design = des, data = samp))
 
     # define functions needed to create first table
     get_con <- function(x) {
@@ -79,6 +79,7 @@ get_modelstats <- function(seed, size){
     }
     model_list <- list(cox, rid)
 
+
     data_frame(seed = rep(seed,2),
                size = size,
                type = c('coxph', 'ridge'),
@@ -93,7 +94,6 @@ get_modelstats <- function(seed, size){
                                   get_HR_CI_upper),
                coef_pvalue =  map(model_list,
                                  get_coef_pvalue))
-print(paste0("Created a df with ", size, " variables using seed ", seed))
 }
 
 #save an object with 1000 models
@@ -103,9 +103,9 @@ map2_dfr(.x = seed,
          .y = seq(48),
          get_modelstats)
 }
-map_dfr(seq(100), map_sizes) %>%
+map_dfr(seq(10), map_sizes) %>%
 write_rds(here(paste0("dat/6-model-diff-sizes.rds")))
 
 df <- read_rds(here("dat/6-model-diff-sizes.rds"))
 df
-
+all(!is.na(df))
