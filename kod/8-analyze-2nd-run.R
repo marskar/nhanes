@@ -1,157 +1,130 @@
-library(readr)
+#' ---
+#' title: "Second Modeling Run"
+#' author: "Martin Skarzynski"
+#' date: "`r Sys.Date()`"
+#' ---
+
 library(here)
+library(readr)
 library(dplyr)
-library(ggplot2)
+library(tidyr)
+library(survey)
 library(purrr)
+library(furrr)
+plan(multiprocess)
 
-#define function needed to calculate median model stats
-get_median <- function(x, model_type, model_stat){
-    model_type <- deparse(substitute(model_type))
-    model_stat <- enquo(model_stat)
-    x %>%
-        select(type, !!model_stat) %>%
-        group_by(type) %>%
-        summarise(model_median =
-                  median(!!model_stat)) %>%
-        filter(type == model_type) %>%
-        select(model_median) %>%
-        as.numeric
-}
+# this function takes in two integers as an argument
+# this function returns a dataframe
+get_modelstats <- function(seed, size){
 
-#read in dataset created by script 4
-dat_quad <- read_rds(here("dat/7-model-second-run.rds")) %>%
-    rename(con = concordance) %>%
-    mutate(quad =
-           as.factor(
-               case_when(con > median(con) &
-                         aic <= median(aic) ~ 1,
-                         con > median(con) &
-                         aic > median(aic) ~ 2,
-                         con <= median(con) &
-                         aic <= median(aic) ~ 3,
-                         con <= median(con) &
-                         aic > median(aic) ~ 4
-                        )
-                    )
-          )
+    set.seed(seed)
+    #move PERMTH_INT and canc_mort to the beginning
+    #sample a tenth of the dataset columns
+    read_rds(here('dat/3-clean-complete-cases.rds')) %>%
+      select(-SEQN,
+             -HAN9, #remove age variables
+             -HAQ7,
+             -HAT29,
+             -HAJ0,
+	     -WTPXRP2,
+	     -starts_with("WTPQRP")
+             ) %>%
+      select(PERMTH_INT, #person time in months
+             canc_mort, #event
+             SDPPSU6, #PSU
+             SDPSTRA6, #Stratification
+             WTPFQX6, #Weights
+             DMAETHNR, #Ethnicity
+             HAT16, #In the past month, did you lift weights
+             HAK9, # times per night you get up to urinate
+             HSAITMOR, #Age in months at interview (screener)
+             HAQ1, #Describe natural teeth: excellent...poor
+             HAR1, #Have you smoked 100+ cigarettes in life
+             HAT2, #In the past month, did you jog or run
+             HAT18, #In the past month, any other exercises, sports
+             HAB1, #Would you say your health in general is excellent, very good, good, fair, or poor?
+             everything()[sample(seq(ncol(.)),
+                                 round(size))]) ->
+    samp
 
-table(dat_quad$quad)
-table(dat_quad$type)
-dat_quad %>% group_by(type, quad) %>% summarise(n=n())
+    # create survey design object
+    svydesign(ids = ~SDPPSU6,
+              strata = ~SDPSTRA6,
+              weights = ~WTPFQX6,
+              nest = TRUE,
+              data = samp) ->
+    des
 
-# Figure 1
-dat_quad %>%
-    ggplot(aes(x = aic,
-               y = con,
+    # create left side of equations
+    form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
+    # create right sides of equations
+    if(size == 1 & ncol(samp)==7){
+    vrs <- as.name(names(samp)[7])
+    vrs <- as.name(names(samp)[7])
+    } else{
+
+    vrs <- as.name(paste(names(samp)[6:ncol(samp)],
+                         collapse=' + '))
+    vrs2 <- as.name(paste(names(samp)[6:ncol(samp)],
+                          collapse=', '))
+    }
+
+    set.seed(seed)
+    #train <- sample(x = seq(nrow(samp)),
+    #               size = round(nrow(samp)*.7))
+    # generate cox models without and with penalties
+
+    cox <- try(svycoxph(update(form,
+                           paste("~ ", vrs)),
+                    design = des, data = samp))
+
+    rid <- try(svycoxph(update(form,
+                           paste("~ ridge(", vrs2, ')')),
+                    design = des, data = samp))
+
+    # define functions needed to create first table
+    get_con <- function(x) {
+    signif(summary(x)$concordance[1]*100, digits = 2)
+    }
+    get_HR <- function(x) {
+    summary(x)$conf.int[,"exp(coef)"]
+    }
+    get_HR_CI_lower <- function(x) {
+    summary(x)$conf.int[,"lower .95"]
+    }
+    get_HR_CI_upper <- function(x) {
+    summary(x)$conf.int[,"upper .95"]
+    }
+    get_coef_pvalue <- function(x) {
+        coefs <- summary(x)$coef
+        coefs[,ncol(coefs)]
+    }
+    model_list <- try(list(cox,rid))
+
+
+    try(data_frame(seed = rep(seed,2),
                size = size,
-               colour = quad)) +
-geom_point(aes(shape = factor(type)),
-           #size = 3,
-           stroke = 1) +
-scale_shape(solid = FALSE) +
-           theme_minimal() +
-           labs(
-                x = 'Akaike Information Criterion',
-                y = 'Concordance',
-                size = "Model Size",
-                shape = "Model Type",
-                colour = "Quadrant")
-ggsave(here("img/1-quad.pdf"))
-ggsave(here("img/1-quad.png"))
-
-#define function to flatten dat_quad
-dfs <- function(quadrant) {
-dat <- dat_quad %>%
-        filter(quad == quadrant) %>%
-            select(starts_with('h'),
-                   coef_pvalue)
-
-data_frame(name = names(flatten(dat[[1]])),
-           HR = flatten_dbl(dat[[1]]),
-           HR_CI_lower = flatten_dbl(dat[[2]]),
-           HR_CI_upper = flatten_dbl(dat[[3]]),
-           coef_pvalue = flatten_dbl(dat[[4]]),
-           quad = rep(quadrant,
-                      length(flatten(dat[[1]])))
-           )
+               type = c('coxph', 'ridge'),
+               aic = AIC(cox, rid)[,"AIC"],
+               concordance =  future_map_dbl(model_list,
+                                      get_con),
+               hazard_ratio = future_map(model_list,
+                                  get_HR),
+               HR_CI_lower =  future_map(model_list,
+                                  get_HR_CI_lower),
+               HR_CI_upper =  future_map(model_list,
+                                  get_HR_CI_upper),
+               coef_pvalue =  future_map(model_list,
+                                 get_coef_pvalue)))
 }
 
-#flatten dat_quad
-df_coef <- map_dfr(seq(4), dfs)
-#remove ridge from name
-df_coef$name <- gsub("ridge\\(|\\)", "", df_coef$name)
+#save an object with 1000 models
 
-# Figure 2
-df_coef %>%
-    select(-starts_with("HR_CI")) %>%
-    filter(!between(HR, .99, 1.01)) %>%
-    mutate(coef_pvalue = if_else(near(coef_pvalue, 0),
-                                 coef_pvalue+0.1^17,
-                                 coef_pvalue)) %>%
-    ggplot(aes(x = log2(HR),
-               y = -log10(coef_pvalue),
-               colour = as.factor(quad))) +
-           labs(colour = "Quadrant",
-                x = 'log2 Hazard Ratio',
-                y = '-log10 p-value') +
-           geom_point(alpha = 0.75,
-                      size = 1,
-                      stroke = 1) +
-           guides(colour = guide_legend(override.aes = list(alpha = 1))) +
-           geom_text(aes(label=name),
-                     alpha = 0.75,
-                     vjust = 1.2,
-                     show.legend = FALSE,
-                     check_overlap = TRUE) +
-           theme_minimal() +
-           theme(plot.margin = margin(t = -15))
+map_sizes <- function(seed){
+map2_dfr(.x = seed,
+         .y = seq(40),
+         get_modelstats)
+}
+future_map_dfr(seq(10), map_sizes) %>%
+write_rds(here(paste0("dat/7-model-second-run.rds")))
 
-ggsave(here("img/2-volcano.pdf"))
-ggsave(here("img/2-volcano.png"))
-
-#filter out p-values greater than .1^10
-df_sig <- df_coef %>%
-    select(-starts_with("HR_CI")) %>%
-    filter(coef_pvalue<.1^10)
-
-#obtain the order by count for name
-ord <- df_sig %>%
-    count(name) %>%
-    arrange(n) %>%
-    select(name)
-
-#create name factor variable with levels ordered by count
-df_sig$ord_name <- factor(df_sig$name, levels=ord$name)
-
-# Figure 3
-df_sig %>%
-    mutate_if(is.integer, as.factor) %>%
-    ggplot(aes(ord_name,fill=quad)) +
-    geom_bar(position = position_stack(reverse = TRUE)) +
-    scale_y_continuous(expand = c(0,0)) +
-    coord_flip() +
-                  theme_minimal() +
-    theme(legend.position = "top") +
-                  labs(fill = "Quadrant",
-                       x = 'Variable Name',
-                       y = 'Count')
-
-ggsave(here("img/3-varbar.pdf"))
-ggsave(here("img/3-varbar.png"))
-
-# Table 1
-df_sig %>%
-    group_by(quad) %>%
-    rename(Name = name) %>%
-    summarise(n = n()) %>%
-    arrange(desc(n)) %>%
-    knitr::kable()
-
-# Table 2
-df_sig %>%
-    group_by(name) %>%
-    rename(Name = name) %>%
-    summarise(medianHR = median(HR),
-              n = n()) %>%
-    arrange(desc(n)) %>%
-    knitr::kable()

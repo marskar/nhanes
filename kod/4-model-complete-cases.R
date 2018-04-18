@@ -1,4 +1,8 @@
-#!/usr/local/bin Rscript
+#' ---
+#' title: "Model Complete Cases"
+#' author: "Martin Skarzynski"
+#' date: "`r Sys.Date()`"
+#' ---
 
 library(here)
 library(readr)

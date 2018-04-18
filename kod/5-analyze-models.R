@@ -1,3 +1,8 @@
+#' ---
+#' title: "Analyze Complete Cases Models"
+#' author: "Martin Skarzynski"
+#' date: "`r Sys.Date()`"
+#' ---
 library(readr)
 library(here)
 library(dplyr)

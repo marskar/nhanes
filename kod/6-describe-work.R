@@ -1,9 +1,14 @@
+#' ---
+#' title: "Describe First Modeling Run"
+#' author: "Martin Skarzynski"
+#' date: "`r Sys.Date()`"
+#' ---
 library(dplyr)
 ## read in data processed using sas ####
-adult <- readr::read_csv(here("dat/adult.csv"))
-mort <- readr::read_rds(here("dat/1-clean-mort.rds"))
-exam <- readr::read_csv(here("dat/exam.csv"))
-lab <- readr::read_csv(here("dat/lab.csv"))
+adult <- readr::read_csv(here::here("dat/adult.csv"))
+mort <- readr::read_rds(here::here("dat/1-clean-mort.rds"))
+exam <- readr::read_csv(here::here("dat/exam.csv"))
+lab <- readr::read_csv(here::here("dat/lab.csv"))
 
 ## change SEQN to numeric in all datasets read in from csv
 adult$SEQN <- as.numeric(adult$SEQN)
@@ -44,7 +49,7 @@ ncol(dat)-dat %>%
 ncol()
 
 # how many exposures final
-dat <- read_rds(here('dat/3-clean-complete-cases.rds'))
+dat <- readr::read_rds(here::here('dat/3-clean-complete-cases.rds'))
 ncol(dat)-dat %>%
     select(starts_with("PERM"),
            starts_with("SDP"),
@@ -53,11 +58,4 @@ ncol(dat)-dat %>%
            contains("STAT"),
            starts_with("SEQ")) %>%
 #how many cancer deaths
-length(dat$canc_mort[dat$canc_mort==1])
 sum(dat$PERM_INTH)
-
-
-dat %>%
-    select(starts_with("SDP"))
-%>%
-    sum()/12

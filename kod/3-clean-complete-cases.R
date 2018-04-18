@@ -1,3 +1,8 @@
+#' ---
+#' title: "Clean Complete Cases"
+#' author: "Martin Skarzynski"
+#' date: "`r Sys.Date()`"
+#' ---
 library(here)
 library(readr)
 library(dplyr)
