@@ -1,26 +1,26 @@
 ## All Rmarkdown files in the working directory
-SRC = $(wildcard *.Rmd)
-
+RMD = $(wildcard *.Rmd)
+R_FILES=$(wildcard kod/*.R)
 ## Location of Pandoc support files.
 PREFIX = /Users/marskar/gdrive/nhanes/.pandoc
 
 ## Location of your working bibliography file
-BIB = /Users/marskar/gdrive/nhanes/bib/nhanes.bib
+BIB = /Users/marskar/gdrive/nhanes/nhanes.bib
 
 ## CSL stylesheet (located in the csl folder of the PREFIX directory).
 CSL = apsa
 
-MD=$(SRC:.Rmd=.md)
-PDFS=$(SRC:.Rmd=.pdf)
-HTML=$(SRC:.Rmd=.html)
-TEX=$(SRC:.Rmd=.tex)
-DOCX=$(SRC:.md=.docx)
+MD=$(RMD:.Rmd=.md)
+PDFS=$(RMD:.Rmd=.pdf)
+HTML=$(RMD:.Rmd=.html)
+TEX=$(RMD:.Rmd=.tex)
+DOCX=$(RMD:.Rmd=.docx)
 
 all:	$(MD) $(PDFS) $(HTML) $(DOCX)
 
 # variables: $@ = The file name of the target of the rule. $< The name of the first prerequisite.
 %.md: %.Rmd
-	Rscript -e "knitr::knit('$<')"
+	Rscript -e "rmarkdown::render('$<', output_format = 'md_document')"
 	mv $@ out/
 
 %.html:	%.md 
