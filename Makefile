@@ -1,8 +1,18 @@
-## All Rmarkdown files in the working directory
-R_FILES = $(wildcard *.R*)
-IPYNB = $(wildcard *.ipynb)
-SLIDES = $(wildcard *slides.Rmd)
-MDS = $(wildcard out/*.md)
+## All R files in the working directory
+R_FILES = $(wildcard *.R)
+RMD_FILES = $(wildcard *.Rmd)
+
+MD_FILES1=$(patsubst %.R, out/%.md, $(R_FILES))
+MD_FILES2=$(patsubst %.Rmd, out/%.md, $(RMD_FILES))
+
+
+# .PHONY : variables
+# variables:
+# 	@echo R_FILES: $(R_FILES)
+# 	@echo MD_FILES1: $(MD_FILES1)
+# 	@echo MD_FILES2: $(MD_FILES2)
+
+
 ## Location of Pandoc support files.
 PREFIX = /Users/marskar/gdrive/nhanes/.pandoc
 
@@ -12,10 +22,9 @@ BIB = /Users/marskar/gdrive/nhanes/nhanes.bib
 ## CSL stylesheet (located in the csl folder of the PREFIX directory).
 CSL = apsa
 
-MD=$(R_FILES:.R=.md) $(R_FILES:.Rmd=.md) $(IPYNB:.ipynb=.md)
+MDS = $(wildcard old/*.md)
 PDFS=$(MDS:.md=.pdf)
 HTML=$(MDS:.md=.html)
-TEX=$(MDS:.md=.tex)
 DOCX=$(MDS:.md=.docx)
 
 ## VARIOUS SLIDE METHODS
@@ -24,21 +33,20 @@ SLIDY_OPTS = -t slidy
 S5_OPTS = -t s5
 SLIDES_OPTS = $(REVEALJS_OPTS)
 
-all:	$(MD) $(PDFS) $(HTML) $(DOCX)
+all:	$(MD_FILES1) $(MD_FILES2) $(PDFS) $(HTML) $(DOCX)
 
 # variables: $@ = The file name of the target of the rule. $< = The name of the first prerequisite.
-%.md: %.R*
-	Rscript -e "rmarkdown::render('$<', output_format = 'md_document')"
+$(MD_FILES1): $(R_FILES)
+	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_dir = 'out')"
 
- %.md: %.ipynb
+$(MD_FILES2): $(RMD_FILES)
+	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_dir = 'out')"
+
+%.md: %.ipynb
 	 jupyter nbconvert --to markdown --output $@ $<
 
 %.html:	%.md
 	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w html --csl=$(PREFIX)/csl/$(CSL).csl --bibliography=$(BIB) -o $@ $<
-
-%.tex:	%.md
-	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w latex -s --csl=$(PREFIX)/csl/ajps.csl --bibliography=$(BIB) -o $@ $<
-
 
 %.pdf:	%.md
 	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w latex -s --csl=$(PREFIX)/csl/ajps.csl --bibliography=$(BIB) -o $@ $<
