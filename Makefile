@@ -28,7 +28,7 @@ all:	$(MD) $(PDFS) $(HTML) $(DOCX)
 
 # variables: $@ = The file name of the target of the rule. $< = The name of the first prerequisite.
 %.md: %.R*
-	Rscript -e "rmarkdown::render('$<', output_format = 'md_document')"
+	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_dir = 'out')"
 
 # %.md: %.ipynb
 	# jupyter nbconvert --to markdown $@ $<
