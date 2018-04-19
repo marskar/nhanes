@@ -1,16 +1,21 @@
 ## All R files in the working directory
 R_FILES = $(wildcard *.R)
 RMD_FILES = $(wildcard *.Rmd)
+IPYNB_FILES = $(wildcard *.ipynb)
 
 MD_FILES1=$(patsubst %.R, out/%.md, $(R_FILES))
 MD_FILES2=$(patsubst %.Rmd, out/%.md, $(RMD_FILES))
+MD_FILES3=$(patsubst %.ipynb, out/%.md, $(IPYNB_FILES))
 
 
 # .PHONY : variables
 # variables:
 # 	@echo R_FILES: $(R_FILES)
+# 	@echo RMD_FILES: $(RMD_FILES)
+# 	@echo IPYNB_FILES: $(IPYNB_FILES)
 # 	@echo MD_FILES1: $(MD_FILES1)
 # 	@echo MD_FILES2: $(MD_FILES2)
+# 	@echo MD_FILES3: $(MD_FILES3)
 
 
 ## Location of Pandoc support files.
@@ -33,7 +38,7 @@ SLIDY_OPTS = -t slidy
 S5_OPTS = -t s5
 SLIDES_OPTS = $(REVEALJS_OPTS)
 
-all:	$(MD_FILES1) $(MD_FILES2) $(PDFS) $(HTML) $(DOCX)
+all:	$(MD_FILES1) $(MD_FILES2) $(MD_FILES3) $(PDFS) $(HTML) $(DOCX)
 
 # variables: $@ = The file name of the target of the rule. $< = The name of the first prerequisite.
 $(MD_FILES1): $(R_FILES)
@@ -42,7 +47,7 @@ $(MD_FILES1): $(R_FILES)
 $(MD_FILES2): $(RMD_FILES)
 	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_dir = 'out')"
 
-%.md: %.ipynb
+$(MD_FILES3): $(IPYNB_FILES)
 	 jupyter nbconvert --to markdown --output $@ $<
 
 %.html:	%.md
