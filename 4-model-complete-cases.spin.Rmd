@@ -1,9 +1,10 @@
-#' ---
-#' title: "Model Complete Cases"
-#' author: "Martin Skarzynski"
-#' date: "`r Sys.Date()`"
-#' ---
+---
+title: "Model Complete Cases"
+author: "Martin Skarzynski"
+date: "`r Sys.Date()`"
+---
 
+```{r }
 library(here)
 library(readr)
 library(dplyr)
@@ -109,3 +110,11 @@ map2_dfr(.x = seed,
 }
 map_dfr(seq(10), map_sizes) %>%
 write_rds(here(paste0("dat/6-model-diff-sizes.rds")))
+```
+
+
+---
+title: "4-model-complete-cases.R"
+author: "marskar"
+date: "Wed Apr 18 23:00:42 2018"
+---
