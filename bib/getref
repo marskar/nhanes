@@ -5,7 +5,7 @@ then
 else
     echo "Using default doi list name and filepath"
     # echo $1 >> doi_list.txt
-    echo $1 >> doi-list_aric.txt
+    echo $1 >> doi-list.txt
 fi
 
 if [ $3 ]
@@ -14,5 +14,5 @@ then
 else
     echo "Using default bibliography name and filepath"
     # doi2bib $1 >> bibliography.bib
-    doi2bib $1 >> bibliography_aric.bib
+    doi2bib $1 >> bibliography.bib
 fi
