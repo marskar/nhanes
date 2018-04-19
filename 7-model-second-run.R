@@ -10,8 +10,7 @@ library(dplyr)
 library(tidyr)
 library(survey)
 library(purrr)
-library(furrr)
-plan(multiprocess)
+
 
 # this function takes in two integers as an argument
 # this function returns a dataframe
@@ -106,15 +105,15 @@ get_modelstats <- function(seed, size){
                size = size,
                type = c('coxph', 'ridge'),
                aic = AIC(cox, rid)[,"AIC"],
-               concordance =  future_map_dbl(model_list,
+               concordance =  map_dbl(model_list,
                                       get_con),
-               hazard_ratio = future_map(model_list,
+               hazard_ratio = map(model_list,
                                   get_HR),
-               HR_CI_lower =  future_map(model_list,
+               HR_CI_lower =  map(model_list,
                                   get_HR_CI_lower),
-               HR_CI_upper =  future_map(model_list,
+               HR_CI_upper =  map(model_list,
                                   get_HR_CI_upper),
-               coef_pvalue =  future_map(model_list,
+               coef_pvalue =  map(model_list,
                                  get_coef_pvalue)))
 }
 
@@ -125,6 +124,6 @@ map2_dfr(.x = seed,
          .y = seq(40),
          get_modelstats)
 }
-future_map_dfr(seq(10), map_sizes) %>%
+map_dfr(seq(10), map_sizes) %>%
 write_rds(here(paste0("dat/7-model-second-run.rds")))
 
