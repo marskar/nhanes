@@ -3,10 +3,10 @@ R_FILES = $(wildcard *.R)
 RMD_FILES = $(wildcard *.Rmd)
 IPYNB_FILES = $(wildcard *.ipynb)
 
-MD_FILES1=$(patsubst %.R, out/%.md, $(R_FILES))
-MD_FILES2=$(patsubst %.Rmd, out/%.md, $(RMD_FILES))
-MD_FILES3=$(patsubst %.ipynb, out/%.md, $(IPYNB_FILES))
-MDS = $(wildcard out/*.md)
+PDF_FILES1=$(patsubst %.R, out/%.pdf, $(R_FILES))
+PDF_FILES2=$(patsubst %.Rmd, out/%.pdf, $(RMD_FILES))
+PDF_FILES3=$(patsubst %.ipynb, out/%.pdf, $(IPYNB_FILES))
+
 
 
 # .PHONY : variables
@@ -29,9 +29,9 @@ BIB = /Users/marskar/gdrive/nhanes/nhanes.bib
 ## CSL stylesheet (located in the csl folder of the PREFIX directory).
 CSL = apsa
 
-PDFS=$(MDS:.md=.pdf)
-HTML=$(MDS:.md=.html)
-DOCX=$(MDS:.md=.docx)
+# PDFS=$(MDS:.md=.pdf)
+# HTML=$(MDS:.md=.html)
+# DOCX=$(MDS:.md=.docx)
 
 ## VARIOUS SLIDE METHODS
 REVEALJS_OPTS = -t revealjs -V theme=simple -V slideNumber=true -V transition=none -H resources/adjust-revealjs.style
@@ -39,24 +39,27 @@ SLIDY_OPTS = -t slidy
 S5_OPTS = -t s5
 SLIDES_OPTS = $(REVEALJS_OPTS)
 
-all:	$(MD_FILES1) $(MD_FILES2) $(MD_FILES3) $(PDFS) $(HTML) $(DOCX)
+all:	$(PDF_FILES1) $(PDF_FILES2) $(PDF_FILES3)#$(PDFS) $(HTML) $(DOCX)
 
 # variables: $@ = The file name of the target of the rule. $< = The name of the first prerequisite.
-out/%.md: %.R
-	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_file = '$@')"
+out/%.pdf: %.R
+	Rscript -e "rmarkdown::render('$<', output_format = 'pdf_document')"
+	mv *.pdf out/
 
-out/%.md: %.Rmd
-	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_file = '$@')"
+out/%.pdf: %.Rmd
+	Rscript -e "rmarkdown::render('$<', output_format = 'pdf_document')"
+	mv *.pdf out/
 
-out/%.md: %.ipynb
-	 jupyter nbconvert --to markdown --output $@ $<
+out/%.pdf: %.ipynb
+	jupyter nbconvert --to pdf $<
+	mv *.pdf out/
 
-%.html:	%.md
-	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w html --csl=$(PREFIX)/csl/$(CSL).csl --bibliography=$(BIB) -o $@ $<
+# %.html:	%.md
+# 	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w html --csl=$(PREFIX)/csl/$(CSL).csl --bibliography=$(BIB) -o $@ $<
 
-%.pdf:	%.md
-	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w latex -s --csl=$(PREFIX)/csl/ajps.csl --bibliography=$(BIB) -o $@ $<
+# %.pdf:	%.md
+# 	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w latex -s --csl=$(PREFIX)/csl/ajps.csl --bibliography=$(BIB) -o $@ $<
 
-%.docx:	%.md
-	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -s --csl=$(PREFIX)/csl/$(CSL).csl --bibliography=$(BIB) -o $@ $<
+# %.docx:	%.md
+# 	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -s --csl=$(PREFIX)/csl/$(CSL).csl --bibliography=$(BIB) -o $@ $<
 
