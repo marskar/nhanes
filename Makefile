@@ -31,7 +31,7 @@ all:	$(MD) $(PDFS) $(HTML) $(DOCX)
 	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_dir = 'out')"
 
  %.md: %.ipynb
-	 jupyter nbconvert --to markdown out/$@ $<
+	 jupyter nbconvert --to markdown --output out/$@ $<
 
 %.html:	%.md 
 	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w html --csl=$(PREFIX)/csl/$(CSL).csl --bibliography=$(BIB) -o $@ $<
