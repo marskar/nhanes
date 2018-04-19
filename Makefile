@@ -1,7 +1,7 @@
 ## All Rmarkdown files in the working directory
 R_FILES = $(wildcard *.R*)
-#IPYNB = $(wildcard *.ipynb)
-#SLIDES = $(wildcard *slides.Rmd)
+IPYNB = $(wildcard *.ipynb)
+SLIDES = $(wildcard *slides.Rmd)
 MDS = $(wildcard out/*.md)
 ## Location of Pandoc support files.
 PREFIX = /Users/marskar/gdrive/nhanes/.pandoc
@@ -12,7 +12,7 @@ BIB = /Users/marskar/gdrive/nhanes/nhanes.bib
 ## CSL stylesheet (located in the csl folder of the PREFIX directory).
 CSL = apsa
 
-MD=$(R_FILES:.R=.md)#$(R_FILES:.Rmd=.md)
+MD=$(R_FILES:.R=.md) $(R_FILES:.Rmd=.md) $(IPYNB:.ipynb=.md)
 PDFS=$(MDS:.md=.pdf)
 HTML=$(MDS:.md=.html)
 TEX=$(MDS:.md=.tex)
@@ -28,10 +28,10 @@ all:	$(MD) $(PDFS) $(HTML) $(DOCX)
 
 # variables: $@ = The file name of the target of the rule. $< = The name of the first prerequisite.
 %.md: %.R*
-	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_dir = 'out')"
+	Rscript -e "rmarkdown::render('$<', output_format = 'md_document')"
 
-#%.md: %.ipynb
-	
+%.md: %.ipynb
+	jupyter nbconvert --to markdown $@ $<
 
 %.html:	%.md 
 	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w html --csl=$(PREFIX)/csl/$(CSL).csl --bibliography=$(BIB) -o $@ $<

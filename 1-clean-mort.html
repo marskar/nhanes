@@ -1,0 +1,57 @@
+<pre><code>## read in data processed using sas and clean w/ dplyr ####
+library(here)
+
+## here() starts at /Users/marskar/gdrive/nhanes
+
+library(dplyr)
+
+## 
+## Attaching package: &#39;dplyr&#39;
+
+## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag
+
+## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union
+
+library(readr)
+read_csv(here(&quot;dat/mort.csv&quot;)) %&gt;%
+    select(-starts_with(&quot;MORTSRCE&quot;)) %&gt;%
+    filter(!is.na(UCOD_LEADING) &amp; !is.na(PERMTH_INT)) %&gt;%
+    mutate_at(.vars = vars(-starts_with(&quot;PERMTH_&quot;),
+                           -SEQN),
+              .funs = funs(as.factor)) %&gt;%
+    write_rds(here(&quot;dat/1-clean-mort.rds&quot;))
+
+## Parsed with column specification:
+## cols(
+##   SEQN = col_integer(),
+##   ELIGSTAT = col_character(),
+##   MORTSTAT = col_character(),
+##   CAUSEAVL = col_character(),
+##   UCOD_LEADING = col_character(),
+##   DIABETES = col_character(),
+##   HYPERTEN = col_character(),
+##   PERMTH_INT = col_integer(),
+##   PERMTH_EXM = col_integer(),
+##   MORTSRCE_NDI = col_character(),
+##   MORTSRCE_CMS = col_character(),
+##   MORTSRCE_SSA = col_character(),
+##   MORTSRCE_DC = col_character(),
+##   MORTSRCE_DCL = col_character()
+## )
+
+#names(mort)
+#length(mort)
+#glimpse(mort)
+
+#any(is.na(mort$PERMTH_INT))
+#all(is.na((select(mort, contains(&#39;WGT&#39;)))))
+#all(is.na((select(mort, contains(&#39;MORTSRCE_DCL&#39;)))))
+#unique(select(mort, -contains(&#39;MORTSRCE&#39;)))
+
+#library(purrr, help)
+#map(mort, nlevels)
+#nlevels(mort)</code></pre>
