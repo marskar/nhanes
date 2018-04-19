@@ -12,7 +12,7 @@ BIB = /Users/marskar/gdrive/nhanes/nhanes.bib
 ## CSL stylesheet (located in the csl folder of the PREFIX directory).
 CSL = apsa
 
-MD=$(R_FILES:.R=.md) $(R_FILES:.Rmd=.md)#$(IPYNB:.ipynb=.md)
+MD=$(R_FILES:.R=.md) $(R_FILES:.Rmd=.md) $(IPYNB:.ipynb=.md)
 PDFS=$(MDS:.md=.pdf)
 HTML=$(MDS:.md=.html)
 TEX=$(MDS:.md=.tex)
@@ -30,8 +30,8 @@ all:	$(MD) $(PDFS) $(HTML) $(DOCX)
 %.md: %.R*
 	Rscript -e "rmarkdown::render('$<', output_format = 'md_document', output_dir = 'out')"
 
-# %.md: %.ipynb
-	# jupyter nbconvert --to markdown $@ $<
+ %.md: %.ipynb
+	 jupyter nbconvert --to markdown out/$@ $<
 
 %.html:	%.md 
 	pandoc -r markdown+simple_tables+table_captions+yaml_metadata_block -w html --csl=$(PREFIX)/csl/$(CSL).csl --bibliography=$(BIB) -o $@ $<
