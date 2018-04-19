@@ -10,10 +10,12 @@ library(dplyr)
 library(tidyr)
 library(survey)
 library(purrr)
+library(furrr)
+plan(multiprocess)
 
-# this function takes in an integer as an argument
+# this function takes in two integers as an argument
 # this function returns a dataframe
-get_modelstats <- function(seed){
+get_modelstats <- function(seed, size){
 
     set.seed(seed)
     #move PERMTH_INT and canc_mort to the beginning
@@ -26,7 +28,7 @@ get_modelstats <- function(seed){
              SDPSTRA6,
              WTPFQX6,
              everything()[sample(seq(ncol(.)),
-                                 round(ncol(.)/10))]) ->
+                                 round(size))]) ->
     samp
 
     # create survey design object
@@ -40,23 +42,29 @@ get_modelstats <- function(seed){
     # create left side of equations
     form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
     # create right sides of equations
+    if(size == 1 & ncol(samp)==7){
+    vrs <- as.name(names(samp)[7])
+    vrs <- as.name(names(samp)[7])
+    } else{
+
     vrs <- as.name(paste(names(samp)[6:ncol(samp)],
                          collapse=' + '))
     vrs2 <- as.name(paste(names(samp)[6:ncol(samp)],
                           collapse=', '))
+    }
 
     set.seed(seed)
     #train <- sample(x = seq(nrow(samp)),
     #               size = round(nrow(samp)*.7))
     # generate cox models without and with penalties
 
-    cox <- svycoxph(update(form,
+    cox <- try(svycoxph(update(form,
                            paste("~ ", vrs)),
-                    design = des, data = samp)
+                    design = des, data = samp))
 
-    rid <- svycoxph(update(form,
+    rid <- try(svycoxph(update(form,
                            paste("~ ridge(", vrs2, ')')),
-                    design = des, data = samp)
+                    design = des, data = samp))
 
     # define functions needed to create first table
     get_con <- function(x) {
@@ -75,22 +83,31 @@ get_modelstats <- function(seed){
         coefs <- summary(x)$coef
         coefs[,ncol(coefs)]
     }
-    model_list <- list(cox, rid)
+    model_list <- try(list(cox, rid))
 
-    data_frame(seed = rep(seed,2),
+
+    try(data_frame(seed = rep(seed,2),
+               size = size,
                type = c('coxph', 'ridge'),
                aic = AIC(cox, rid)[,"AIC"],
-               concordance =  map_dbl(model_list,
+               concordance =  future_map_dbl(model_list,
                                       get_con),
-               hazard_ratio = map(model_list,
+               hazard_ratio = future_map(model_list,
                                   get_HR),
-               HR_CI_lower =  map(model_list,
+               HR_CI_lower =  future_map(model_list,
                                   get_HR_CI_lower),
-               HR_CI_upper =  map(model_list,
+               HR_CI_upper =  future_map(model_list,
                                   get_HR_CI_upper),
-               coef_pvalue =  map(model_list,
-                                 get_coef_pvalue))
+               coef_pvalue =  future_map(model_list,
+                                 get_coef_pvalue)))
 }
-map_dfr(seq(100), get_modelstats) %>%
-write_rds(here(paste0("dat/4-model-complete-cases.rds")))
 
+#save an object with 1000 models
+
+map_sizes <- function(seed){
+map2_dfr(.x = seed,
+         .y = seq(48),
+         get_modelstats)
+}
+future_map_dfr(seq(10), map_sizes) %>%
+write_rds(here(paste0("dat/6-model-diff-sizes.rds")))
