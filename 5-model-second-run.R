@@ -117,7 +117,7 @@ get_modelstats <- function(seed, size){
                                  get_coef_pvalue)))
 }
 
-#save an object with 1000 models
+#save an object with 800 models
 
 map_sizes <- function(seed){
 map2_dfr(.x = seed,
@@ -125,5 +125,5 @@ map2_dfr(.x = seed,
          get_modelstats)
 }
 map_dfr(seq(10), map_sizes) %>%
-write_rds(here(paste0("dat/7-model-second-run.rds")))
+write_rds(here(paste0("dat/5-model-second-run.rds")))
 

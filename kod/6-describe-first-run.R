@@ -38,24 +38,24 @@ dat
 
 
 # how many exposures 1
-ncol(dat)-dat %>%
-    select(starts_with("PERM"),
-           starts_with("SDP"),
-           starts_with("canc_"),
-           starts_with("UCOD"),
-           contains("STAT"),
-           starts_with("WTP"),
-           starts_with("SEQ")) %>%
-ncol()
+#ncol(dat)-dat %>%
+#    select(starts_with("PERM"),
+#           starts_with("SDP"),
+#           starts_with("canc_"),
+#           starts_with("UCOD"),
+#           contains("STAT"),
+#           starts_with("WTP"),
+#           starts_with("SEQ")) %>%
+#ncol()
 
 # how many exposures final
-dat <- readr::read_rds(here::here('dat/3-clean-complete-cases.rds'))
-ncol(dat)-dat %>%
-    select(starts_with("PERM"),
-           starts_with("SDP"),
-           starts_with("canc_"),
-           starts_with("UCOD"),
-           contains("STAT"),
-           starts_with("SEQ")) %>%
-#how many cancer deaths
-sum(dat$PERM_INTH)
+#dat <- readr::read_rds(here::here('dat/3-clean-complete-cases.rds'))
+#ncol(dat)-dat %>%
+#    select(starts_with("PERM"),
+#           starts_with("SDP"),
+#           starts_with("canc_"),
+#           starts_with("UCOD"),
+#           contains("STAT"),
+#           starts_with("SEQ")) %>%
+###how many cancer deaths
+#sum(dat$PERM_INTH)

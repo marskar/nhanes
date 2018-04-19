@@ -56,8 +56,8 @@ scale_shape(solid = FALSE) +
                 size = "Model Size",
                 shape = "Model Type",
                 colour = "Quadrant")
-ggsave(here("img/1-quad.pdf"))
-ggsave(here("img/1-quad.png"))
+ggsave(here("img/1-quad2.pdf"))
+ggsave(here("img/1-quad2.png"))
 
 #define function to flatten dat_quad
 dfs <- function(quadrant) {
@@ -106,8 +106,8 @@ df_coef %>%
            theme_minimal() +
            theme(plot.margin = margin(t = -15))
 
-ggsave(here("img/2-volcano.pdf"))
-ggsave(here("img/2-volcano.png"))
+ggsave(here("img/2-volcano2.pdf"))
+ggsave(here("img/2-volcano2.png"))
 
 #filter out p-values greater than .1^10
 df_sig <- df_coef %>%
@@ -136,8 +136,8 @@ df_sig %>%
                        x = 'Variable Name',
                        y = 'Count')
 
-ggsave(here("img/3-varbar.pdf"))
-ggsave(here("img/3-varbar.png"))
+ggsave(here("img/3-varbar2.pdf"))
+ggsave(here("img/3-varbar2.png"))
 
 # Table 1
 df_sig %>%

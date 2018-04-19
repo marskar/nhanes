@@ -100,7 +100,7 @@ get_modelstats <- function(seed, size){
                                  get_coef_pvalue)))
 }
 
-#save an object with 1000 models
+#save an object with 960 models
 
 map_sizes <- function(seed){
 map2_dfr(.x = seed,
