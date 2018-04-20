@@ -11,10 +11,54 @@ library(tidyr)
 library(survey)
 library(purrr)
 
-
 # this function takes in two integers as an argument
 # this function returns a dataframe
 get_modelstats <- function(seed, size){
+
+#Variables included in the model
+chosen_vars <- as.name(PERMTH_INT,
+                       canc_mort,
+                       SDPPSU6,
+                       SDPSTRA6,
+                       WTPFQX6)
+random_vars
+    set.seed(seed)
+    #move PERMTH_INT and canc_mort to the beginning
+    #sample a tenth of the dataset columns
+    read_rds(here('dat/3-clean-complete-cases.rds')) %>%
+      select(-SEQN) %>%
+      select(chosen_vars
+             everything()[sample(seq(ncol(.)),
+                                 n_random_vars)]) ->
+    dat
+
+    # create survey design object
+    svydesign(ids = ~SDPPSU6,
+              strata = ~SDPSTRA6,
+              weights = ~WTPFQX6,
+              nest = TRUE,
+              data = dat) ->
+    des
+
+    # create left sides of equations
+    form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
+    # create right sides of equations
+    p = ncol(dat)
+    c = length(chosen_vars)
+    r = n_random_vars
+    # the total number of parameters (p)
+    # should equal the number of chosen (c) 
+    # plus the number of random (r) variables, i.e.
+    # p = c + r
+    if(r == 1 & p==c+1){
+    vrs <- as.name(names(dat)[p])
+    vrs2 <- as.name(names(dat)[p])
+    } else{
+    vrs <- as.name(paste(names(dat)[c:p],
+                         collapse=' + '))
+    vrs2 <- as.name(paste(names(dat)[c:p],
+                          collapse=', '))
+    }
 
     set.seed(seed)
     #move PERMTH_INT and canc_mort to the beginning
@@ -37,6 +81,7 @@ get_modelstats <- function(seed, size){
              HAT16, #In the past month, did you lift weights
              HAK9, # times per night you get up to urinate
              HSAITMOR, #Age in months at interview (screener)
+             strata(HSAITMOR), #Stratify by age
              HAQ1, #Describe natural teeth: excellent...poor
              HAR1, #Have you smoked 100+ cigarettes in life
              HAT2, #In the past month, did you jog or run
@@ -60,7 +105,7 @@ get_modelstats <- function(seed, size){
     # create right sides of equations
     if(size == 1 & ncol(samp)==7){
     vrs <- as.name(names(samp)[7])
-    vrs <- as.name(names(samp)[7])
+    vrs2 <- as.name(names(samp)[7])
     } else{
 
     vrs <- as.name(paste(names(samp)[6:ncol(samp)],

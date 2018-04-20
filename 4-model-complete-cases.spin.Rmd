@@ -1,9 +1,10 @@
-#' ---
-#' title: "Model Complete Cases"
-#' author: "Martin Skarzynski"
-#' date: "`r Sys.Date()`"
-#' ---
+---
+title: "Model Complete Cases"
+author: "Martin Skarzynski"
+date: "`r Sys.Date()`"
+---
 
+```{r }
 library(here)
 library(readr)
 library(dplyr)
@@ -129,3 +130,11 @@ map2_dfr(.x = seed,
 }
 map_dfr(seq(50), map_seeds) %>%
 write_rds(here(paste0("dat/4-model-complete-cases.rds")))
+```
+
+
+---
+title: "4-model-complete-cases.R"
+author: "marskar"
+date: "Fri Apr 20 13:05:45 2018"
+---

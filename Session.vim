@@ -7,17 +7,17 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +53 kod/5-analyze-models.R
-badd +36 term://.//2577:R\ 
+badd +131 4-model-complete-cases.R
+badd +0 term://.//19483:R\ 
 argglobal
 silent! argdel *
-$argadd kod/5-analyze-models.R
+$argadd 4-model-complete-cases.R
 set splitbelow splitright
 set nosplitbelow
 wincmd t
 set winminheight=1 winminwidth=1 winheight=1 winwidth=1
 argglobal
-if bufexists('term://.//2577:R\ ') | buffer term://.//2577:R\  | else | edit term://.//2577:R\  | endif
+if bufexists('term://.//19483:R\ ') | buffer term://.//19483:R\  | else | edit term://.//19483:R\  | endif
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -26,11 +26,11 @@ setlocal fdl=0
 setlocal fml=1
 setlocal fdn=20
 setlocal nofen
-let s:l = 36 - ((35 * winheight(0) + 18) / 36)
+let s:l = 39 - ((38 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-36
+39
 normal! 0
 tabnext 1
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
