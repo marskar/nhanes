@@ -83,13 +83,13 @@ path <- 'dat/3-clean-complete-cases.rds'
 map_sizes <- function(seed){
 map2_dfr(.x = seed,
          .y = seq(10), # number of random variables
-         ~get_modelstats(seed=.x,
+         ~try(get_modelstats(seed=.x,
                          n_random_vars=.y,
                          datafile_path=path,
                          chosen_vars=chsn,
-                         remove_vars=remv))
+                         remove_vars=remv)))
 }
 #save an object with 1000 models
-map_dfr(.x = seq(50), # number of seeds
-               .f = ~map_sizes(seed=.x)) %>%
+try(map_dfr(.x = seq(50), # number of seeds
+               .f = ~try(map_sizes(seed=.x)))) %>%
 write_rds(here("dat/6-model-third-run.rds"))

@@ -44,14 +44,14 @@ get_modelstats <- function(
     #train <- sample(x = seq(nrow(dat)),
     #               n_random_vars = round(nrow(dat)*.7))
     # generate cox models without and with penalties
-rside1 <- paste("~ strata(HSAITMOR) + ", vrs)
-rside2 <- paste("~ strata(HSAITMOR) + ridge(", vrs2, ')')
+rside1 <- paste("~ strata(age_strat) + ", vrs)
+rside2 <- paste("~ strata(age_strat) + ridge(", vrs2, ')')
 
-    cox <- try(svycoxph(update(form, rside1),
-                        design = des, data = dat))
+    cox <- svycoxph(update(form, rside1),
+                    design = des, data = dat)
 
-    rid <- try(svycoxph(update(form, rside2),
-                        design = des, data = dat))
+    rid <- svycoxph(update(form, rside2),
+                    design = des, data = dat)
 
     # define functions needed to create first table
     get_con <- function(x) {
@@ -70,10 +70,8 @@ rside2 <- paste("~ strata(HSAITMOR) + ridge(", vrs2, ')')
         coefs <- summary(x)$coef
         coefs[,ncol(coefs)]
     }
-    model_list <- try(list(cox, rid))
-
-
-    try(data_frame(seed = rep(seed,2),
+    model_list <- list(cox, rid)
+    data_frame(seed = rep(seed,2),
                n_random_vars = n_random_vars,
                type = c('coxph', 'ridge'),
                aic = AIC(cox, rid)[,"AIC"],
@@ -86,5 +84,5 @@ rside2 <- paste("~ strata(HSAITMOR) + ridge(", vrs2, ')')
                HR_CI_upper =  future_map(model_list,
                                   get_HR_CI_upper),
                coef_pvalue =  future_map(model_list,
-                                 get_coef_pvalue)))
+                                 get_coef_pvalue))
 }

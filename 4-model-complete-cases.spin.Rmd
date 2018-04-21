@@ -1,14 +1,14 @@
-#' ---
-#' title: "Model Complete Cases"
-#' author: "Martin Skarzynski"
-#' date: "`r Sys.Date()`"
-#' ---
+---
+title: "Model Complete Cases"
+author: "Martin Skarzynski"
+date: "`r Sys.Date()`"
+---
 
-#+ setup, include=FALSE
+```{r setup, include=FALSE}
 library(knitr)
 opts_chunk$set(message = FALSE, warnings = FALSE)
 
-#+ libs
+```{r libs}
 library(here)
 library(readr)
 library(dplyr)
@@ -19,7 +19,7 @@ library(furrr)
 plan(multiprocess)
 source("kod/get_modelstats.R")
 
-#+ chosen-variables
+```{r chosen-variables}
 #Variables to be included in the model
 chsn <- c(
           "PERMTH_INT", #time
@@ -31,7 +31,7 @@ chsn <- c(
           #"HSAGEIR" #Age in years at interview
          )
 
-#+ remove-variables
+```{r remove-variables}
 #Variables to be removed from the model
 remv <- c(
           "HAN9", #remove age variables
@@ -41,7 +41,7 @@ remv <- c(
          )
 path <- 'dat/3-clean-complete-cases.rds'
 
-#+ map-models
+```{r map-models}
 # the modelstats function returns a dataframe
 # after taking in the following arguments
 #seed,
@@ -62,3 +62,11 @@ map2_dfr(.x = seed,
 try(map_dfr(.x = seq(50), # number of seeds
                .f = ~try(map_sizes(seed=.x)))) %>%
 write_rds(here("dat/4-model-first-run.rds"))
+```
+
+
+---
+title: "4-model-complete-cases.R"
+author: "marskar"
+date: "Sat Apr 21 12:05:05 2018"
+---
