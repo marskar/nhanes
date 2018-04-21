@@ -9,8 +9,11 @@ library(dplyr)
 library(ggplot2)
 library(purrr)
 
-#read in dataset created by script 4
-dat_quad <- read_rds(here("dat/4-model-complete-cases.rds")) %>%
+#read in datasets created by scripts 4 & 5
+files <- c("dat/4-model-complete-cases.rds", "dat/5-model-second-run.rds")
+dat_quad <- files %>%
+    map(read_rds) %>%
+    reduce(rbind) %>%
     rename(con = concordance) %>%
     mutate(quad =
            as.factor(
@@ -45,6 +48,7 @@ scale_shape(solid = FALSE) +
                 size = "Model Size",
                 shape = "Model Type",
                 colour = "Quadrant")
+
 ggsave(here("img/1-quad.pdf"))
 ggsave(here("img/1-quad.png"))
 
