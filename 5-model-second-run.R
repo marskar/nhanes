@@ -4,172 +4,73 @@
 #' date: "`r Sys.Date()`"
 #' ---
 
+#+ setup, include=FALSE
+library(knitr)
+opts_chunk$set(message = FALSE, warnings = FALSE)
+
+#+ libs
 library(here)
 library(readr)
 library(dplyr)
 library(tidyr)
 library(survey)
 library(purrr)
+library(furrr)
+plan(multiprocess)
+source("kod/get_modelstats.R")
 
-# this function takes in two integers as an argument
-# this function returns a dataframe
-get_modelstats <- function(seed, size){
+#+ chosen-variables
+#Variables to be included in the model
+chsn <- c(
+          "PERMTH_INT", #time
+          "canc_mort", #event
+          "SDPPSU6", #PSU
+          "SDPSTRA6", #Stratification
+          "WTPFQX6", #Weights
+          "HSAITMOR", #Age in months at interview (screener)
+          "DMAETHNR", #Ethnicity
+          "HSSEX" #Biological sex
+          "HAT16", #In the past month, did you lift weights
+          "HAK9", # times per night you get up to urinate
+          "HAQ1", #Describe natural teeth: excellent...poor
+          "HAR1", #Have you smoked 100+ cigarettes in life
+          "HAT2", #In the past month, did you jog or run
+          "HAT18", #In the past month, any other exercises, sports
+          "HAB1", #Would you say your health in general is excellent, very good, good, fair, or poor?
+      )
 
-#Variables included in the model
-chosen_vars <- as.name(PERMTH_INT,
-                       canc_mort,
-                       SDPPSU6,
-                       SDPSTRA6,
-                       WTPFQX6)
-random_vars
-    set.seed(seed)
-    #move PERMTH_INT and canc_mort to the beginning
-    #sample a tenth of the dataset columns
-    read_rds(here('dat/3-clean-complete-cases.rds')) %>%
-      select(-SEQN) %>%
-      select(chosen_vars
-             everything()[sample(seq(ncol(.)),
-                                 n_random_vars)]) ->
-    dat
+#+ remove-variables
+#Variables to be removed from the model
+remv <- c(
+          "HAN9", #remove age variables
+          "HAQ7",
+          "HAT29",
+          "HAJ0",
+          "WTPXRP2", #remove unneed weight variables
+          "WTPQRP21",
+          "WTPQRP27",
+          "WTPQRP43"
+          )
+path <- 'dat/3-clean-complete-cases.rds'
 
-    # create survey design object
-    svydesign(ids = ~SDPPSU6,
-              strata = ~SDPSTRA6,
-              weights = ~WTPFQX6,
-              nest = TRUE,
-              data = dat) ->
-    des
-
-    # create left sides of equations
-    form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
-    # create right sides of equations
-    p = ncol(dat)
-    c = length(chosen_vars)
-    r = n_random_vars
-    # the total number of parameters (p)
-    # should equal the number of chosen (c) 
-    # plus the number of random (r) variables, i.e.
-    # p = c + r
-    if(r == 1 & p==c+1){
-    vrs <- as.name(names(dat)[p])
-    vrs2 <- as.name(names(dat)[p])
-    } else{
-    vrs <- as.name(paste(names(dat)[c:p],
-                         collapse=' + '))
-    vrs2 <- as.name(paste(names(dat)[c:p],
-                          collapse=', '))
-    }
-
-    set.seed(seed)
-    #move PERMTH_INT and canc_mort to the beginning
-    #sample a tenth of the dataset columns
-    read_rds(here('dat/3-clean-complete-cases.rds')) %>%
-      select(-SEQN,
-             -HAN9, #remove age variables
-             -HAQ7,
-             -HAT29,
-             -HAJ0,
-	     -WTPXRP2,
-	     -starts_with("WTPQRP")
-             ) %>%
-      select(PERMTH_INT, #person time in months
-             canc_mort, #event
-             SDPPSU6, #PSU
-             SDPSTRA6, #Stratification
-             WTPFQX6, #Weights
-             DMAETHNR, #Ethnicity
-             HAT16, #In the past month, did you lift weights
-             HAK9, # times per night you get up to urinate
-             HSAITMOR, #Age in months at interview (screener)
-             strata(HSAITMOR), #Stratify by age
-             HAQ1, #Describe natural teeth: excellent...poor
-             HAR1, #Have you smoked 100+ cigarettes in life
-             HAT2, #In the past month, did you jog or run
-             HAT18, #In the past month, any other exercises, sports
-             HAB1, #Would you say your health in general is excellent, very good, good, fair, or poor?
-             HSSEX, #Biological sex
-             everything()[sample(seq(ncol(.)),
-                                 round(size))]) ->
-    samp
-
-    # create survey design object
-    svydesign(ids = ~SDPPSU6,
-              strata = ~SDPSTRA6,
-              weights = ~WTPFQX6,
-              nest = TRUE,
-              data = samp) ->
-    des
-
-    # create left side of equations
-    form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
-    # create right sides of equations
-    if(size == 1 & ncol(samp)==7){
-    vrs <- as.name(names(samp)[7])
-    vrs2 <- as.name(names(samp)[7])
-    } else{
-
-    vrs <- as.name(paste(names(samp)[6:ncol(samp)],
-                         collapse=' + '))
-    vrs2 <- as.name(paste(names(samp)[6:ncol(samp)],
-                          collapse=', '))
-    }
-
-    set.seed(seed)
-    #train <- sample(x = seq(nrow(samp)),
-    #               size = round(nrow(samp)*.7))
-    # generate cox models without and with penalties
-
-    cox <- try(svycoxph(update(form,
-                           paste("~ ", vrs)),
-                    design = des, data = samp))
-
-    rid <- try(svycoxph(update(form,
-                           paste("~ ridge(", vrs2, ')')),
-                    design = des, data = samp))
-
-    # define functions needed to create first table
-    get_con <- function(x) {
-    signif(summary(x)$concordance[1]*100, digits = 2)
-    }
-    get_HR <- function(x) {
-    summary(x)$conf.int[,"exp(coef)"]
-    }
-    get_HR_CI_lower <- function(x) {
-    summary(x)$conf.int[,"lower .95"]
-    }
-    get_HR_CI_upper <- function(x) {
-    summary(x)$conf.int[,"upper .95"]
-    }
-    get_coef_pvalue <- function(x) {
-        coefs <- summary(x)$coef
-        coefs[,ncol(coefs)]
-    }
-    model_list <- try(list(cox,rid))
-
-
-    try(data_frame(seed = rep(seed,2),
-               size = size,
-               type = c('coxph', 'ridge'),
-               aic = AIC(cox, rid)[,"AIC"],
-               concordance =  map_dbl(model_list,
-                                      get_con),
-               hazard_ratio = map(model_list,
-                                  get_HR),
-               HR_CI_lower =  map(model_list,
-                                  get_HR_CI_lower),
-               HR_CI_upper =  map(model_list,
-                                  get_HR_CI_upper),
-               coef_pvalue =  map(model_list,
-                                 get_coef_pvalue)))
-}
-
-#save an object with 800 models
-
+#+ map-models
+# the modelstats function returns a dataframe
+# after taking in the following arguments
+#seed,
+#n_random_vars,
+#datafile_path,
+#chosen_vars,
+#remove_vars
 map_sizes <- function(seed){
-map2_dfr(.x = seed,
-         .y = seq(40),
-         get_modelstats)
+future_map2_dfr(.x = seed,
+         .y = seq(3), # number of random variables
+         ~get_modelstats(seed=.x,
+                         n_random_vars=.y,
+                         datafile_path=path,
+                         chosen_vars=chsn,
+                         remove_vars=remv))
 }
-map_dfr(seq(10), map_sizes) %>%
-write_rds(here(paste0("dat/5-model-second-run.rds")))
-
+#save an object with 1000 models
+future_map_dfr(.x = seq(3), # number of seeds
+               .f = ~map_sizes(seed=.x)) %>%
+write_rds(here("dat/5-model-second-run.rds"))

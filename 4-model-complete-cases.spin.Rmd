@@ -4,137 +4,74 @@ author: "Martin Skarzynski"
 date: "`r Sys.Date()`"
 ---
 
-```{r }
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(message = FALSE, warnings = FALSE)
+
+```{r libs}
 library(here)
 library(readr)
 library(dplyr)
 library(tidyr)
 library(survey)
 library(purrr)
+library(furrr)
+plan(multiprocess)
+source("kod/get_modelstats.R")
 
-# this function takes in two integers as arguments
-# the seed and the number of random variables
-# and returns a dataframe
-get_modelstats <- function(seed, n_random_vars){
+```{r chosen-variables}
+#Variables to be included in the model
+chsn <- c(
+          "PERMTH_INT", #time
+          "canc_mort", #event
+          "SDPPSU6", #PSU
+          "SDPSTRA6", #Stratification
+          "WTPFQX6", #Weights
+          "HSAITMOR", #Age in months at interview (screener)
+          "DMAETHNR", #Ethnicity
+          "HSSEX" #Biological sex
+      )
 
-    set.seed(seed)
-    #Variables included in the model
-    chosen_vars <- c(
-                     "PERMTH_INT",
-                     "canc_mort",
-                     "SDPPSU6",
-                     "SDPSTRA6",
-                     "WTPFQX6"
-                     )
+```{r remove-variables}
+#Variables to be removed from the model
+remv <- c(
+          "HAN9", #remove age variables
+          "HAQ7",
+          "HAT29",
+          "HAJ0",
+          "WTPXRP2", #remove unneed weight variables
+          "WTPQRP21",
+          "WTPQRP27",
+          "WTPQRP43"
+          )
+path <- 'dat/3-clean-complete-cases.rds'
 
-    remove_vars <- c(
-                     "HAN9", #remove age variables
-                     "HAQ7",
-                     "HAT29",
-                     "HAJ0",
-                     "WTPXRP2", #remove unneed weight variables
-                     "WTPQRP21",
-                     "WTPQRP27",
-                     "WTPQRP43"
-                     )
-
-    #remove variables,
-    #move chosen variables to the beginning, and
-    #sample from the variables to be randomized
-    read_rds(here('dat/3-clean-complete-cases.rds')) %>%
-        select(-one_of(remove_vars)) %>%
-        select(one_of(chosen_vars),
-               everything()[sample(seq(ncol(.)),
-                                 n_random_vars)]) ->
-    dat
-
-    # create survey design object
-    svydesign(ids = ~SDPPSU6,
-              strata = ~SDPSTRA6,
-              weights = ~WTPFQX6,
-              nest = TRUE,
-              data = dat) ->
-    des
-
-    # create left sides of equations
-    form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
-    # create right sides of equations
-    n_params <- ncol(dat) # the total number of parameters
-    # n_params should equal the number of chosen variables
-    # plus the number of random variables
-    r_cols <- (length(chosen_vars)+1):n_params
-    if(n_random_vars==1){
-    vrs <- as.name(names(dat)[n_params])
-    vrs2 <- as.name(names(dat)[n_params])
-    } else{
-    vrs <- as.name(paste(names(dat)[r_cols], collapse=' + '))
-    vrs2 <- as.name(paste(names(dat)[r_cols], collapse=', '))
-    }
-
-
-    set.seed(seed)
-    #train <- sample(x = seq(nrow(dat)),
-    #               n_random_vars = round(nrow(dat)*.7))
-    # generate cox models without and with penalties
-
-    cox <- try(svycoxph(update(form,
-                           paste("~ ", vrs)),
-                    design = des, data = dat))
-
-    rid <- try(svycoxph(update(form,
-                           paste("~ ridge(", vrs2, ')')),
-                    design = des, data = dat))
-
-    # define functions needed to create first table
-    get_con <- function(x) {
-    signif(summary(x)$concordance[1]*100, digits = 2)
-    }
-    get_HR <- function(x) {
-    summary(x)$conf.int[,"exp(coef)"]
-    }
-    get_HR_CI_lower <- function(x) {
-    summary(x)$conf.int[,"lower .95"]
-    }
-    get_HR_CI_upper <- function(x) {
-    summary(x)$conf.int[,"upper .95"]
-    }
-    get_coef_pvalue <- function(x) {
-        coefs <- summary(x)$coef
-        coefs[,ncol(coefs)]
-    }
-    model_list <- try(list(cox, rid))
-
-
-    try(data_frame(seed = rep(seed,2),
-               n_random_vars = n_random_vars,
-               type = c('coxph', 'ridge'),
-               aic = AIC(cox, rid)[,"AIC"],
-               concordance =  map_dbl(model_list,
-                                      get_con),
-               hazard_ratio = map(model_list,
-                                  get_HR),
-               HR_CI_lower =  map(model_list,
-                                  get_HR_CI_lower),
-               HR_CI_upper =  map(model_list,
-                                  get_HR_CI_upper),
-               coef_pvalue =  map(model_list,
-                                 get_coef_pvalue)))
-}
-
-#save an object with 1000 models
-
-map_seeds <- function(seed){
+```{r map-models}
+# the modelstats function returns a dataframe
+# after taking in the following arguments
+#seed,
+#n_random_vars,
+#datafile_path,
+#chosen_vars,
+#remove_vars
+map_sizes <- function(seed){
 map2_dfr(.x = seed,
-         .y = seq(10), #max number of variables to randomize
-         get_modelstats)
+         .y = seq(10), # number of random variables
+         ~get_modelstats(seed=.x,
+                         n_random_vars=.y,
+                         datafile_path=path,
+                         chosen_vars=chsn,
+                         remove_vars=remv))
 }
-map_dfr(seq(50), map_seeds) %>%
-write_rds(here(paste0("dat/4-model-complete-cases.rds")))
+#save an object with 1000 models
+map_dfr(.x = seq(50), # number of seeds
+               .f = ~map_sizes(seed=.x)) %>%
+write_rds(here("dat/4-model-first-run.rds"))
 ```
 
 
 ---
 title: "4-model-complete-cases.R"
 author: "marskar"
-date: "Fri Apr 20 13:05:45 2018"
+date: "Fri Apr 20 21:14:07 2018"
 ---

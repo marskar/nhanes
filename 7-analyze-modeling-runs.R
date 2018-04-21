@@ -9,22 +9,8 @@ library(dplyr)
 library(ggplot2)
 library(purrr)
 
-#define function needed to calculate median model stats
-get_median <- function(x, model_type, model_stat){
-    model_type <- deparse(substitute(model_type))
-    model_stat <- enquo(model_stat)
-    x %>%
-        select(type, !!model_stat) %>%
-        group_by(type) %>%
-        summarise(model_median =
-                  median(!!model_stat)) %>%
-        filter(type == model_type) %>%
-        select(model_median) %>%
-        as.numeric
-}
-
 #read in dataset created by script 4
-dat_quad <- read_rds(here("dat/6-model-diff-sizes.rds")) %>%
+dat_quad <- read_rds(here("dat/4-model-complete-cases.rds")) %>%
     rename(con = concordance) %>%
     mutate(quad =
            as.factor(
@@ -40,15 +26,13 @@ dat_quad <- read_rds(here("dat/6-model-diff-sizes.rds")) %>%
                     )
           )
 
-table(dat_quad$quad)
-table(dat_quad$type)
 dat_quad %>% group_by(type, quad) %>% summarise(n=n())
 
 # Figure 1
 dat_quad %>%
     ggplot(aes(x = aic,
                y = con,
-               size = size,
+               size = n_random_vars,
                colour = quad)) +
 geom_point(aes(shape = factor(type)),
            #size = 3,
