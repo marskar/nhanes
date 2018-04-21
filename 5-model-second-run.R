@@ -29,14 +29,14 @@ chsn <- c(
           "WTPFQX6", #Weights
           "HSAITMOR", #Age in months at interview (screener)
           "DMAETHNR", #Ethnicity
-          "HSSEX" #Biological sex
+          "HSSEX", #Biological sex
           "HAT16", #In the past month, did you lift weights
           "HAK9", # times per night you get up to urinate
           "HAQ1", #Describe natural teeth: excellent...poor
           "HAR1", #Have you smoked 100+ cigarettes in life
           "HAT2", #In the past month, did you jog or run
           "HAT18", #In the past month, any other exercises, sports
-          "HAB1", #Would you say your health in general is excellent, very good, good, fair, or poor?
+          "HAB1" #Would you say your health in general is excellent, very good, good, fair, or poor?
       )
 
 #+ remove-variables
@@ -62,8 +62,8 @@ path <- 'dat/3-clean-complete-cases.rds'
 #chosen_vars,
 #remove_vars
 map_sizes <- function(seed){
-future_map2_dfr(.x = seed,
-         .y = seq(3), # number of random variables
+map2_dfr(.x = seed,
+         .y = seq(10), # number of random variables
          ~get_modelstats(seed=.x,
                          n_random_vars=.y,
                          datafile_path=path,
@@ -71,6 +71,6 @@ future_map2_dfr(.x = seed,
                          remove_vars=remv))
 }
 #save an object with 1000 models
-future_map_dfr(.x = seq(3), # number of seeds
+map_dfr(.x = seq(50), # number of seeds
                .f = ~map_sizes(seed=.x)) %>%
 write_rds(here("dat/5-model-second-run.rds"))
