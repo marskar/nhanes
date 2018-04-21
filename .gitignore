@@ -20,6 +20,9 @@ obj*/
 # Google Drive icon?
 Icon?
 */Icon?
+#Rstudio project files
+packrat
+file*
 .Rproj.user
 packrat/lib*/
 .Rprofile
