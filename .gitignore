@@ -5,22 +5,21 @@
 *.pptx
 *.xls
 *.xlsx
-
 # ignore data and literature folders to keep repo size manageable (backed up by Google drive)
 dat/
 lit/
 raw/
 obj*/
-
 # ignore Google files (backed up by Google drive)
 *.gdoc
 *.gslides
 *.gsheet
-
 # Apple macOS operating system .DS_Store file stores custom attributes of its containing folder, such as the position of icons or the choice of a background image
 .DS_Store
 */.DS_Store
-
 # Google Drive icon?
 Icon?
 */Icon?
+.Rproj.user
+packrat/lib*/
+.Rprofile
