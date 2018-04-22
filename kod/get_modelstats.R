@@ -1,18 +1,19 @@
+library(dplyr)
+library(readr)
+library(survey)
+library(here)
 get_modelstats <- function(
                            seed,
                            n_random_vars,
                            datafile_path,
-                           chosen_vars,
-                           remove_vars
+                           pick_vars
                            ){
-
     set.seed(seed)
     #remove variables,
     #move chosen variables to the beginning, and
     #sample from the variables to be randomized
     read_rds(here(datafile_path)) %>%
-        select(-one_of(remove_vars)) %>%
-        select(one_of(chosen_vars),
+        select(one_of(pick_vars),
                everything()[sample(seq(ncol(.)),
                                  n_random_vars)]) ->
     dat
@@ -31,7 +32,7 @@ get_modelstats <- function(
     n_params <- ncol(dat) # the total number of parameters
     # n_params should equal the number of chosen variables
     # plus the number of random variables
-    r_cols <- (length(chosen_vars)+1):n_params
+    r_cols <- (length(pick_vars)+1):n_params
     if(n_random_vars==1){
     vrs <- as.name(names(dat)[n_params])
     vrs2 <- as.name(names(dat)[n_params])
@@ -44,14 +45,17 @@ get_modelstats <- function(
     #train <- sample(x = seq(nrow(dat)),
     #               n_random_vars = round(nrow(dat)*.7))
     # generate cox models without and with penalties
-rside1 <- paste("~ strata(age_strat) + ", vrs)
-rside2 <- paste("~ strata(age_strat) + ridge(", vrs2, ')')
+    rside1 <- paste("~ strata(age_strat) + ", vrs)
+    rside2 <- paste("~ strata(age_strat) + ridge(", vrs2, ')')
 
-    cox <- svycoxph(update(form, rside1),
-                    design = des, data = dat)
+    cox <- NULL
+    try({cox <- svycoxph(update(form, rside1),
+                        design = des, data = dat)},
+        silent = TRUE)
 
-    rid <- svycoxph(update(form, rside2),
-                    design = des, data = dat)
+    rid <- NULL
+    try({rid <- svycoxph(update(form, rside2),
+                        design = des, data = dat)})
 
     # define functions needed to create first table
     get_con <- function(x) {
@@ -70,19 +74,25 @@ rside2 <- paste("~ strata(age_strat) + ridge(", vrs2, ')')
         coefs <- summary(x)$coef
         coefs[,ncol(coefs)]
     }
-    model_list <- list(cox, rid)
-    data_frame(seed = rep(seed,2),
-               n_random_vars = n_random_vars,
-               type = c('coxph', 'ridge'),
-               aic = AIC(cox, rid)[,"AIC"],
-               concordance =  future_map_dbl(model_list,
-                                      get_con),
-               hazard_ratio = future_map(model_list,
-                                  get_HR),
-               HR_CI_lower =  future_map(model_list,
-                                  get_HR_CI_lower),
-               HR_CI_upper =  future_map(model_list,
-                                  get_HR_CI_upper),
-               coef_pvalue =  future_map(model_list,
-                                 get_coef_pvalue))
+    get_df <- function(model){
+        model_type <- deparse(substitute(model))
+        data_frame(seed = seed,
+               n_vars = length(names(dat)),
+               type = model_type,
+               aic = AIC(model)["AIC"],
+               concordance =  get_con(model),
+               hazard_ratio = get_HR(model),
+               HR_CI_lower =  get_HR_CI_lower(model),
+               HR_CI_upper = get_HR_CI_upper(model),
+               coef_pvalue = get_coef_pvalue(model))
+    }
+    if(is.null(cox) & !is.null(rid)){ df <- get_df(rid) }
+    if(!is.null(cox) & is.null(rid)){ df <- get_df(cox) }
+    if(!is.null(cox) & !is.null(rid)){
+        cox_df <- get_df(cox)
+        rid_df <- get_df(rid)
+        df <- bind_rows(cox_df, rid_df)
+    }
+
+    return(df)
 }

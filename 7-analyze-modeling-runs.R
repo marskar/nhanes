@@ -10,7 +10,8 @@ library(ggplot2)
 library(purrr)
 
 #read in datasets created by scripts 4 & 5
-files <- c("dat/4-model-complete-cases.rds", "dat/5-model-second-run.rds")
+files <- c(here( "dat/4-model-first-run.rds" ),
+           here( "dat/5-model-second-run.rds") )
 dat_quad <- files %>%
     map(read_rds) %>%
     reduce(rbind) %>%
