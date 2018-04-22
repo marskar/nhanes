@@ -10,12 +10,17 @@ library(ggplot2)
 library(purrr)
 
 #read in datasets created by scripts 4 & 5
-files <- c(here( "dat/4-model-first-run.rds" ),
-           here( "dat/5-model-second-run.rds") )
-dat_quad <- files %>%
-    map(read_rds) %>%
-    reduce(rbind) %>%
-    rename(con = concordance) %>%
+dat_quad1 <- read_rds("dat/4-model-first-run.rds")
+dat_quad2 <- read_rds("dat/5-model-second-run.rds")
+files <- c("dat/4-model-complete-cases.rds", "dat/5-model-second-run.rds")
+dat_quad2 %>%
+    tail
+dat_quad <-  bind_rows(dat_quad1, dat_quad2) %>%
+
+#read_rds("dat/4-model-first-run.rds") %>%
+    #rename(con = concordance) %>%
+ dat_quad2 <-    dat_quad2 %>%
+    rename(con=concordance) %>%
     mutate(quad =
            as.factor(
                case_when(con > median(con) &
@@ -31,12 +36,12 @@ dat_quad <- files %>%
           )
 
 dat_quad %>% group_by(type, quad) %>% summarise(n=n())
-
+which( is.na(dat_quad2$con) )
 # Figure 1
-dat_quad %>%
+dat_quad2 %>%
     ggplot(aes(x = aic,
                y = con,
-               size = n_random_vars,
+               size = n_vars,
                colour = quad)) +
 geom_point(aes(shape = factor(type)),
            #size = 3,
@@ -53,10 +58,16 @@ scale_shape(solid = FALSE) +
 ggsave(here("img/1-quad.pdf"))
 ggsave(here("img/1-quad.png"))
 
+dat <- dat_quad %>%
+        filter(quad == 1) %>%
+            select(starts_with('h'),
+                   coef_pvalue)
+names( dat_quad )
+names(flatten(dat_quad[[3]]))
 #define function to flatten dat_quad
 dfs <- function(quadrant) {
 dat <- dat_quad %>%
-        filter(quad == quadrant) %>%
+        filter(quad == quad) %>%
             select(starts_with('h'),
                    coef_pvalue)
 
@@ -102,7 +113,7 @@ df_coef %>%
 
 ggsave(here("img/2-volcano.pdf"))
 ggsave(here("img/2-volcano.png"))
-
+which(df_coef$name=="")
 #filter out p-values greater than .1^10
 df_sig <- df_coef %>%
     select(-starts_with("HR_CI")) %>%
@@ -133,6 +144,8 @@ df_sig %>%
 ggsave(here("img/3-varbar.pdf"))
 ggsave(here("img/3-varbar.png"))
 
+df_sig$name[""]
+names( df_sig )
 # Table 1
 df_sig %>%
     group_by(quad) %>%

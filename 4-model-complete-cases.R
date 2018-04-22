@@ -48,14 +48,14 @@ path <- 'dat/3-clean-complete-cases.rds'
 #remove_vars
 map_sizes <- function(seed){
     map2_dfr(.x = seed,
-             .y = seq(25), # number of random variables
+             .y = seq(50), # number of random variables
              ~get_modelstats(seed=.x,
                              n_random_vars=.y,
                              datafile_path=path,
                              pick_vars=chsn))
 }
 #save an object with 1000 models
-map_dfr(.x = seq(50), # number of seeds
+map_dfr(.x = seq(100), # number of seeds
         .f = ~map_sizes(seed=.x)) %>%
 write_rds(here("dat/4-model-first-run.rds"))
 
