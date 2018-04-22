@@ -44,8 +44,8 @@ get_modelstats <- function(
     #train <- sample(x = seq(nrow(dat)),
     #               n_random_vars = round(nrow(dat)*.7))
     # generate cox models without and with penalties
-    rside1 <- paste("~ + ", vrs)
-    rside2 <- paste("~ + ridge(", vrs2, ')')
+    rside1 <- paste("~ strata(age_strat) + ", vrs)
+    rside2 <- paste("~ strata(age_strat) + ridge(", vrs2, ')')
 
     cox <- NULL
     try({cox <- svycoxph(update(form, rside1),
