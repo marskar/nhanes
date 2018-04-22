@@ -31,14 +31,14 @@ get_modelstats <- function(
     n_params <- ncol(dat) # the total number of parameters
     # n_params should equal the number of chosen variables
     # plus the number of random variables
-    r_cols <- (length(pick_vars)+1):n_params
-    if(n_random_vars==1){
-    vrs <- as.name(names(dat)[n_params])
-    vrs2 <- as.name(names(dat)[n_params])
-    } else{
-    vrs <- as.name(paste(names(dat)[r_cols], collapse=' + '))
-    vrs2 <- as.name(paste(names(dat)[r_cols], collapse=', '))
-    }
+    #r_cols <- (length(pick_vars)+1):n_params
+    #y <- length(c("PERMTH_INT", "canc_mort"))
+    #d <- length(c("SDPPSU6", "SDPSTRA6", "WTPFQX6"))
+    #var_col_start <- y + d + 1
+    var_cols <- 6:n_params
+
+    vrs <- as.name(paste(names(dat)[var_cols], collapse=' + '))
+    vrs2 <- as.name(paste(names(dat)[var_cols], collapse=', '))
 
     #set.seed(seed)
     #train <- sample(x = seq(nrow(dat)),

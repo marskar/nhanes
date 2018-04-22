@@ -23,8 +23,8 @@ chsn <- c(
           "canc_mort", #event
           "SDPPSU6", #PSU
           "SDPSTRA6", #Stratification
-          "WTPFQX6", #Weights
-          "age_strat" #Age strata from script 3
+          "WTPFQX6" #Weights
+          #"age_strat" #Age strata from script 3
           #"HSAGEIR" #Age in years at interview
          )
 
@@ -36,6 +36,7 @@ remv <- c(
           "HAT29",
           "HAJ0"
          )
+
 path <- 'dat/3-clean-complete-cases.rds'
 
 #+ map-models
@@ -55,7 +56,7 @@ map_sizes <- function(seed){
                              pick_vars=chsn))
 }
 #save an object with 1000 models
-map_dfr(.x = seq(100), # number of seeds
+map_dfr(.x = seq(10), # number of seeds
         .f = ~map_sizes(seed=.x)) %>%
 write_rds(here("dat/4-model-first-run.rds"))
 

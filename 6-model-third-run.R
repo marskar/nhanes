@@ -12,11 +12,8 @@ opts_chunk$set(message = FALSE, warnings = FALSE)
 library(here)
 library(readr)
 library(dplyr)
-library(tidyr)
 library(survey)
 library(purrr)
-library(furrr)
-plan(multiprocess)
 source("kod/get_modelstats.R")
 
 #+ chosen-variables
@@ -27,49 +24,35 @@ chsn <- c(
           "SDPPSU6", #PSU
           "SDPSTRA6", #Stratification
           "WTPFQX6", #Weights
-          "HSAITMOR", #Age in months at interview (screener)
+          #"age_strat", #Age strata from script 3
+          "HSAGEIR", #Age in years at interview
+          #"HSAITMOR", #Age in months at interview (screener)
           "DMAETHNR", #Ethnicity
           "HSSEX", #Biological sex
-          "HFF1",
-          "HAT10",
-          "HAS1",
-          "HFA13",
-          "HAT16", #In the past month, did you lift weights
-          "HAK9", # times per night you get up to urinate
+          "HAB1", #Would you say your health in general is excellent, very good, good, fair, or poor?
+          #"HAB7", #During the past 12 months, about how many times have you been in a nursing or convalescent home?
+          #"HAC1A", #Doctor ever told you had: arthritis
+          #"HAF25", #Have you ever had a spell of marked loss of vision in one eye or pronounced blurring of vision in both eyes lasting more than 5 minutes?
+          #"HAK9", #Times per night you get up to urinate
+          #"HAL3", #Do you bring up phlegm on most days for 3 consecutive months or more during the year?
+          #"HAN5JS", #Flour tortillas -times/month
+          #"HAN1IS", #Cheese dishes - times/month
+          #"HAN6ES", #Regular colas and sodas - times/month
+          #"HAP2", #Do you use glasses, contacts, or both?
           "HAQ1", #Describe natural teeth: excellent...poor
           "HAR1", #Have you smoked 100+ cigarettes in life
-          "HAT2", #In the past month, did you jog or run
-          "HAT18", #In the past month, any other exercises, sports
-          "HAB1" #Would you say your health in general is excellent, very good, good, fair, or poor?
+          #"HAS1", #Past 2 wks, did you work at job/business
+          #"HAS29", #Language you mainly speak at work/school
+          "HAT10", #In the past month did you... do other dancing?
+          #"HAT16", #In the past month, did you lift weights
+          #"HAT18", #In the past month, any other exercises, sports
+          "HAT2" #In the past month, did you jog or run
+          #"HAV7R", #How long have you lived at this address? (weeks)
+          #"HFA13", #Did --ever serve in the armed forces of the United States?
+          #"HFF1", #Does anyone who lives here smoke cigarettes in the home?
+          #"HFF13A", #Social Security or Railroad Retirement payments in family
       )
 
-#+ remove-variables
-#Variables to be removed from the model
-remv <- c(
-          "HAN9", #remove age variables
-          "HAQ7",
-          "HAT29",
-          "HAJ0",
-          "WTPXRP2", #remove unneed weight variables
-          "WTPQRP5",
-          "WTPQRP7",
-          "WTPQRP13",
-          "WTPQRP15",
-          "WTPQRP16",
-          "WTPQRP17",
-          "WTPQRP18",
-          "WTPQRP19",
-          "WTPQRP20",
-          "WTPQRP21",
-          "WTPQRP23",
-          "WTPQRP27",
-          "WTPQRP28",
-          "WTPQRP39",
-          "WTPQRP40",
-          "WTPQRP43",
-          "WTPQRP44",
-          "WTPQRP49"
-          )
 path <- 'dat/3-clean-complete-cases.rds'
 
 #+ map-models
@@ -81,15 +64,14 @@ path <- 'dat/3-clean-complete-cases.rds'
 #chosen_vars,
 #remove_vars
 map_sizes <- function(seed){
-map2_dfr(.x = seed,
-         .y = seq(10), # number of random variables
-         ~try(get_modelstats(seed=.x,
-                         n_random_vars=.y,
-                         datafile_path=path,
-                         chosen_vars=chsn,
-                         remove_vars=remv)))
+    map2_dfr(.x = seed,
+             .y = seq(45), # number of random variables
+             ~get_modelstats(seed=.x,
+                             n_random_vars=.y,
+                             datafile_path=path,
+                             pick_vars=chsn))
 }
 #save an object with 1000 models
-try(map_dfr(.x = seq(50), # number of seeds
-               .f = ~try(map_sizes(seed=.x)))) %>%
+map_dfr(.x = seq(10), # number of seeds
+        .f = ~map_sizes(seed=.x)) %>%
 write_rds(here("dat/6-model-third-run.rds"))
