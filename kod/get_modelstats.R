@@ -19,12 +19,11 @@ get_modelstats <- function(
     dat
 
     # create survey design object
-    svydesign(ids = ~SDPPSU6,
-              strata = ~SDPSTRA6,
-              weights = ~WTPFQX6,
-              nest = TRUE,
-              data = dat) ->
-    des
+    des <- svydesign(ids = ~SDPPSU6,
+                     strata = ~SDPSTRA6,
+                     weights = ~WTPFQX6,
+                     nest = TRUE,
+                     data = dat)
 
     # create left sides of equations
     form <- as.formula(Surv(PERMTH_INT, canc_mort) ~ x1)
@@ -57,42 +56,71 @@ get_modelstats <- function(
     try({rid <- svycoxph(update(form, rside2),
                         design = des, data = dat)})
 
+    if(is.null(cox) & is.null(rid)){
+        message(paste("cox and ridge models are both NULL",
+                      "\n",
+                      "returning empty dataframe"))
+         df <- data_frame(n_vars = length(names(dat)),
+                           type = NA,
+                           aic = NA,
+                           concordance =  NA,
+                           hazard_ratio = list( NA, NA ),
+                           hr_ci_lower =  list(NA, NA),
+                           hr_ci_upper = list(NA, NA),
+                           coef_pvalue = list(NA, NA))
+         return(df)
+    }
     # define functions needed to create first table
     get_con <- function(x) {
-    signif(summary(x)$concordance[1]*100, digits = 2)
+        signif(summary(x)$concordance[1]*100, digits = 2)
     }
-    get_HR <- function(x) {
-    summary(x)$conf.int[,"exp(coef)"]
+    get_hr <- function(x) {
+        list( summary(x)$conf.int[,"exp(coef)"] )
     }
-    get_HR_CI_lower <- function(x) {
-    summary(x)$conf.int[,"lower .95"]
+    get_hr_ci_lower <- function(x) {
+        list( summary(x)$conf.int[,"lower .95"] )
     }
-    get_HR_CI_upper <- function(x) {
-    summary(x)$conf.int[,"upper .95"]
+    get_hr_ci_upper <- function(x) {
+        list( summary(x)$conf.int[,"upper .95"] )
     }
     get_coef_pvalue <- function(x) {
         coefs <- summary(x)$coef
-        coefs[,ncol(coefs)]
+        list( coefs[,ncol(coefs)] )
     }
     get_df <- function(model){
         model_type <- deparse(substitute(model))
         data_frame(seed = seed,
-               n_vars = length(names(dat)),
-               type = model_type,
-               aic = AIC(model)["AIC"],
-               concordance =  get_con(model),
-               hazard_ratio = get_HR(model),
-               HR_CI_lower =  get_HR_CI_lower(model),
-               HR_CI_upper = get_HR_CI_upper(model),
-               coef_pvalue = get_coef_pvalue(model))
+                   n_vars = length(names(dat)),
+                   type = model_type,
+                   aic = AIC(model)["AIC"],
+                   concordance =  get_con(model),
+                   hazard_ratio = get_hr(model),
+                   hr_ci_lower =  get_hr_ci_lower(model),
+                   hr_ci_upper = get_hr_ci_upper(model),
+                   coef_pvalue = get_coef_pvalue(model))
     }
-    if(is.null(cox) & !is.null(rid)){ df <- get_df(rid) }
-    if(!is.null(cox) & is.null(rid)){ df <- get_df(cox) }
+    if(is.null(cox) & !is.null(rid)){
+        df <- get_df(rid)
+        message(paste("making ridge model with",
+                      n_random_vars,
+                      "random variables and seed",
+                      seed))
+    }
+    if(!is.null(cox) & is.null(rid)){
+        df <- get_df(cox)
+        message(paste("making cox model with",
+                      n_random_vars,
+                      "random variables and seed",
+                      seed))
+    }
     if(!is.null(cox) & !is.null(rid)){
         cox_df <- get_df(cox)
         rid_df <- get_df(rid)
+        message(paste("making cox and ridge models with",
+                      n_random_vars,
+                      "random variables and seed",
+                      seed))
         df <- bind_rows(cox_df, rid_df)
     }
-
-    return(df)
+     return(df)
 }

@@ -18,12 +18,18 @@ dat <- read_rds(here('dat/2-join-complete-cases.rds')) %>%
            -starts_with("WTPX"),
            -starts_with("WTPFE"),
            -starts_with("WTPFH"),
+           -HAN9, #remove age variables
+           -HAQ7,
+           -HAT29,
+           -HAJ0,
+           -HAK12,
+           -HAM7,
+           -HSAITMOR,
            -contains(".y"),
            -contains(".x"),
-           -HSAITMOR,
            -SEQN,
            -PERMTH_EXM) %>%
-    select(-findCorrelation(cor(.), cutoff=0.88)) %>%
+    select(-findCorrelation(cor(.), cutoff=0.9)) %>%
     mutate(age_strat = as.factor(case_when(HSAGEIR>=18 &
                                            HSAGEIR<=29 ~ 1,
                                            HSAGEIR>=30 &
