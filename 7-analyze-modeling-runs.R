@@ -11,6 +11,7 @@ library(tidyr)
 library(purrr)
 library(stringr)
 library(forcats)
+library(tidyr)
 
 #read in datasets created by scripts 4 & 5
 dat_quad1 <- read_rds("dat/6-model-diff-sizes.rds")
@@ -89,9 +90,20 @@ ggsave(here("img/1-quad-final.pdf"))
 ggsave(here("img/1-quad-final.png"))
 
 
-#remove ridge from name
-
+#remove ridge from variable name
 #define function to flatten dat_quad
+names <- names(flatten(dat_quad))
+flat <- flatten(dat_quad)
+flat[3]
+names
+glimpse(flat)
+dat <- dat_quad %>%
+    select(starts_with('h'),
+           coef_pvalue) %>% unnest()
+
+glimpse(dat)
+names(flatten(dat))
+flatten(dat)
 dfs <- function(quadrun) {
     dat <- dat_quad %>%
         filter(quadrun == quadrun) %>%
@@ -102,9 +114,9 @@ dfs <- function(quadrun) {
                    HR = flatten_dbl(dat[[1]]),
                    HR_CI_lower = flatten_dbl(dat[[2]]),
                    HR_CI_upper = flatten_dbl(dat[[3]]),
-                   coef_pvalue = flatten_dbl(dat[[4]]),
-                   quad = rep(quadrun,
-                              length(flatten(dat[[1]])))
+                   coef_pvalue = flatten_dbl(dat[[4]])
+                   #quad = rep(quadrun,
+                              #length(flatten(dat[[1]])))
                    )
 }
 
