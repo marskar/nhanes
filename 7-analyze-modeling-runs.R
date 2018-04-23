@@ -3,6 +3,7 @@
 #' author: "Martin Skarzynski"
 #' date: "`r Sys.Date()`"
 #' ---
+
 library(readr)
 library(here)
 library(dplyr)
@@ -13,13 +14,10 @@ library(stringr)
 library(forcats)
 library(tidyr)
 
-#read in datasets created by scripts 4 & 5
+#read in datasets created by scripts 4 & 6
 dat_quad1 <- read_rds("dat/6-model-diff-sizes.rds")
 dat_quad3 <- read_rds("dat/6-model-third-run.rds")
-#files <- c("dat/4-model-complete-cases.rds", "dat/5-model-second-run.rds")
 
-#read_rds("dat/4-model-first-run.rds") %>%
-    #rename(con = concordance) %>%
 dat_quad1 <-    dat_quad1 %>%
     rename(con=concordance,
            n_vars=size,
@@ -37,16 +35,6 @@ dat_quad1 <-    dat_quad1 %>%
                            )
           )
 
-           #quad = #as.factor(case_when(con > median(con) &
-                  #                    aic <= median(aic) ~ 1,
-                  #                    con > median(con) &
-                  #                    aic > median(aic) ~ 2,
-                  #                    con <= median(con) &
-                  #                    aic <= median(aic) ~ 3,
-                  #                    con <= median(con) &
-                  #                    aic > median(aic) ~ 4
-                  #                  ))
-
 dat_quad3 <-    dat_quad3 %>%
     drop_na() %>%
     rename(con=concordance) %>%
@@ -56,7 +44,7 @@ dat_quad3 <-    dat_quad3 %>%
            quad = rep(5, nrow(.)))
 
 dat_quad <- bind_rows(dat_quad1, dat_quad3) %>%
-    mutate(quad = as.factor(quad)) %>% 
+    mutate(quad = as.factor(quad)) %>%
     mutate(quad = fct_recode(quad, "Run 1, Group A" = '1',
            "Run 1, Group B" = '2',
            "Run 1, Group C" = '3',
@@ -84,58 +72,32 @@ scale_shape(solid = FALSE) +
                 size = "Model Size",
                 shape = "Model Type",
                 colour = "Color Labels") +
-geom_hline(yintercept = 83.5)
+    geom_hline(yintercept = 83.5)
 
 ggsave(here("img/1-quad-final.pdf"))
 ggsave(here("img/1-quad-final.png"))
 
+# Unpack names using one of the list columns
+namevec <- names(unlist(dat_quad$hr_ci_lower))
+
+df_coef <- dat_quad %>%
+    unnest() %>%
+    mutate(name = namevec) %>%
+    filter(n_vars > 1)
 
 #remove ridge from variable name
-#define function to flatten dat_quad
-names <- names(flatten(dat_quad))
-flat <- flatten(dat_quad)
-flat[3]
-names
-glimpse(flat)
-dat <- dat_quad %>%
-    select(starts_with('h'),
-           coef_pvalue) %>% unnest()
-
-glimpse(dat)
-names(flatten(dat))
-flatten(dat)
-dfs <- function(quadrun) {
-    dat <- dat_quad %>%
-        filter(quadrun == quadrun) %>%
-        select(starts_with('h'),
-               coef_pvalue)
-
-        data_frame(name = names(flatten(dat[[1]])),
-                   HR = flatten_dbl(dat[[1]]),
-                   HR_CI_lower = flatten_dbl(dat[[2]]),
-                   HR_CI_upper = flatten_dbl(dat[[3]]),
-                   coef_pvalue = flatten_dbl(dat[[4]])
-                   #quad = rep(quadrun,
-                              #length(flatten(dat[[1]])))
-                   )
-}
-
-#flatten dat_quad
-df_coef <- map_dfr(interaction(seq(4),seq(from = 1, to = 3, by = 2)), dfs)
-glimpse(df_coef)
 df_coef$name <- gsub("ridge\\(|\\)", "", df_coef$name)
-unique(df_coef$quad)
+
 # Figure 2
 df_coef %>%
-    select(-starts_with("HR_CI")) %>%
-    filter(!between(HR, .99, 1.01)) %>%
+    filter(!between(hazard_ratio, .99, 1.01)) %>%
     mutate(coef_pvalue = if_else(near(coef_pvalue, 0),
                                  coef_pvalue+0.1^17,
                                  coef_pvalue)) %>%
-    ggplot(aes(x = log2(HR),
+    ggplot(aes(x = log2(hazard_ratio),
                y = -log10(coef_pvalue),
                colour = quad)) +
-           labs(colour = "Quadrant",
+           labs(colour = "Color Label",
                 x = 'log2 Hazard Ratio',
                 y = '-log10 p-value') +
            geom_point(alpha = 0.5,
@@ -150,14 +112,14 @@ df_coef %>%
            theme_minimal() +
            theme(plot.margin = margin(t = -15))
 
-ggsave(here("img/2-volcano-age_strat.pdf"))
-ggsave(here("img/2-volcano-age_strat.png"))
+ggsave(here("img/2-volcano-final.pdf"))
+ggsave(here("img/2-volcano-final.png"))
 
 #filter out p-values greater than .1^10
 df_sig <- df_coef %>%
-    select(-starts_with("HR_CI")) %>%
     filter(coef_pvalue<.1^10)
 
+df_sig %>% glimpse
 #obtain the order by count for name
 ord <- df_sig %>%
     count(name) %>%
@@ -166,6 +128,14 @@ ord <- df_sig %>%
 
 #create name factor variable with levels ordered by count
 df_sig$ord_name <- factor(df_sig$name, levels=ord$name)
+
+#df_sig %>%
+#    count(name) %>%
+#    mutate(name = fct_reorder(name, n)) %>%
+#    ggplot(aes(x = name, y = n)) +
+#    geom_col() +
+#    coord_flip()
+
 
 # Figure 3
 df_sig %>%
@@ -176,12 +146,12 @@ df_sig %>%
     coord_flip() +
                   theme_minimal() +
     theme(legend.position = "top") +
-                  labs(fill = "Quadrant",
+                  labs(fill = "Color Label",
                        x = 'Variable Name',
                        y = 'Count')
 
-ggsave(here("img/3-varbar3.pdf"))
-ggsave(here("img/3-varbar3.png"))
+ggsave(here("img/3-varbar-final.pdf"))
+ggsave(here("img/3-varbar-final.png"))
 
 df_sig$name[""]
 names( df_sig )
