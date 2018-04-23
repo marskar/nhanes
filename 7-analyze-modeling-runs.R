@@ -16,7 +16,7 @@ library(tidyr)
 
 #read in datasets created by scripts 4 & 6
 dat_quad1 <- read_rds("dat/6-model-diff-sizes.rds")
-dat_quad3 <- read_rds("dat/6-model-third-run.rds")
+dat_quad2 <- read_rds("dat/6-model-third-run.rds")
 
 dat_quad1 <-    dat_quad1 %>%
     rename(con=concordance,
@@ -35,7 +35,7 @@ dat_quad1 <-    dat_quad1 %>%
                            )
           )
 
-dat_quad3 <-    dat_quad3 %>%
+dat_quad2 <-    dat_quad2 %>%
     drop_na() %>%
     rename(con=concordance) %>%
     mutate(type = str_replace(type, "cox", "coxph"),
@@ -43,13 +43,14 @@ dat_quad3 <-    dat_quad3 %>%
            run = rep(3, nrow(.)),
            quad = rep(5, nrow(.)))
 
-dat_quad <- bind_rows(dat_quad1, dat_quad3) %>%
+dat_quad <- bind_rows(dat_quad1, dat_quad2) %>%
     mutate(quad = as.factor(quad)) %>%
-    mutate(quad = fct_recode(quad, "Run 1, Group A" = '1',
-           "Run 1, Group B" = '2',
-           "Run 1, Group C" = '3',
-           "Run 1, Group D" = '4',
-           "Run 3" = '5'))
+    mutate(quad = fct_recode(quad,
+                             "1A" = '1',
+                             "1B" = '2',
+                             "1C" = '3',
+                             "1D" = '4',
+                             "2" = '5'))
 
 #dat_quad <- dat_quad %>%
 #    mutate(quadrun = interaction(quad, run))
@@ -71,7 +72,7 @@ scale_shape(solid = FALSE) +
                 y = 'Concordance',
                 size = "Model Size",
                 shape = "Model Type",
-                colour = "Color Labels") +
+                colour = "Group") +
     geom_hline(yintercept = 83.5)
 
 ggsave(here("img/1-quad-final.pdf"))
@@ -97,7 +98,7 @@ df_coef %>%
     ggplot(aes(x = log2(hazard_ratio),
                y = -log10(coef_pvalue),
                colour = quad)) +
-           labs(colour = "Color Label",
+           labs(colour = "Group",
                 x = 'log2 Hazard Ratio',
                 y = '-log10 p-value') +
            geom_point(alpha = 0.5,
@@ -124,6 +125,7 @@ df_sig %>% glimpse
 ord <- df_sig %>%
     count(name) %>%
     arrange(n) %>%
+    filter(n>15) %>%
     select(name)
 
 #create name factor variable with levels ordered by count
@@ -136,9 +138,9 @@ df_sig$ord_name <- factor(df_sig$name, levels=ord$name)
 #    geom_col() +
 #    coord_flip()
 
-
 # Figure 3
 df_sig %>%
+    drop_na() %>% 
     mutate_if(is.integer, as.factor) %>%
     ggplot(aes(ord_name,fill=quad)) +
     geom_bar(position = position_stack(reverse = TRUE)) +
@@ -146,15 +148,13 @@ df_sig %>%
     coord_flip() +
                   theme_minimal() +
     theme(legend.position = "top") +
-                  labs(fill = "Color Label",
+                  labs(fill = "Group",
                        x = 'Variable Name',
                        y = 'Count')
 
 ggsave(here("img/3-varbar-final.pdf"))
 ggsave(here("img/3-varbar-final.png"))
 
-df_sig$name[""]
-names( df_sig )
 # Table 1
 df_sig %>%
     group_by(quad) %>%
