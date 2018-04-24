@@ -7,17 +7,17 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +131 4-model-complete-cases.R
-badd +0 term://.//19483:R\ 
+badd +50 9-cap-nhanes.Rmd
+badd +265 bibliography.bib
 argglobal
 silent! argdel *
-$argadd 4-model-complete-cases.R
+$argadd 9-cap-nhanes.Rmd
+edit 9-cap-nhanes.Rmd
 set splitbelow splitright
 set nosplitbelow
 wincmd t
 set winminheight=1 winminwidth=1 winheight=1 winwidth=1
 argglobal
-if bufexists('term://.//19483:R\ ') | buffer term://.//19483:R\  | else | edit term://.//19483:R\  | endif
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -26,12 +26,14 @@ setlocal fdl=0
 setlocal fml=1
 setlocal fdn=20
 setlocal nofen
-let s:l = 39 - ((38 * winheight(0) + 19) / 39)
+silent! normal! zE
+let s:l = 1 - ((0 * winheight(0) + 22) / 44)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-39
+1
 normal! 0
+lcd ~/gdrive/nhanes
 tabnext 1
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf
