@@ -9,7 +9,7 @@ date: "`r Sys.Date()`"
 output:
   word_document:
     reference_docx: style.docx
-bibliography: nhanes.bib
+bibliography: bibliography.bib
 csl: bib/biomed-central.csl
 ---
 

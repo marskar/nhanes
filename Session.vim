@@ -7,13 +7,13 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +50 9-cap-nhanes.Rmd
+badd +12 9-cap-nhanes.Rmd
 badd +367 nhanes.bib
 badd +44 term://.//27456:R\ 
 argglobal
 silent! argdel *
 $argadd 9-cap-nhanes.Rmd
-edit 9-cap-nhanes.Rmd
+edit nhanes.bib
 set splitbelow splitright
 set nosplitbelow
 wincmd t
