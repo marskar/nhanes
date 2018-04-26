@@ -8,7 +8,6 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
 endif
 set shortmess=aoO
 badd +50 9-cap-nhanes.Rmd
-badd +1 nhanes.bib
 badd +44 term://.//27456:R\ 
 argglobal
 silent! argdel *
@@ -28,12 +27,12 @@ setlocal fml=1
 setlocal fdn=20
 setlocal nofen
 silent! normal! zE
-let s:l = 1 - ((0 * winheight(0) + 20) / 40)
+let s:l = 38 - ((14 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-1
-normal! 0
+38
+normal! 0675|
 lcd ~/gdrive/nhanes
 tabnext 1
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
