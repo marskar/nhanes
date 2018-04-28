@@ -12,74 +12,46 @@ library(tidyr)
 library(stringr)
 library(forcats)
 
-#read in datasets created by scripts 4 & 6
+#read in datasets created by very first run and scripts 4 thru 6
 dat_quad1 <- read_rds("dat/6-model-diff-sizes.rds")
 dat_quad2 <- read_rds("dat/4-model-first-run.rds")
 dat_quad3 <- read_rds("dat/5-model-second-run.rds")
 dat_quad4 <- read_rds("dat/6-model-third-run.rds")
 
 dat_quad1 <-    dat_quad1 %>%
+    drop_na() %>%
     rename(con=concordance,
            n_vars=size,
            hr_ci_upper = HR_CI_upper,
            hr_ci_lower = HR_CI_lower) %>%
-    mutate(run = rep(1, nrow(.)),
-           quad = case_when(con > median(con) &
-                            aic <= median(aic) ~ 1,
-                            con > median(con) &
-                            aic > median(aic) ~ 2,
-                            con <= median(con) &
-                            aic <= median(aic) ~ 3,
-                            con <= median(con) &
-                            aic > median(aic) ~ 4
-                           )
-          )
+    mutate(run = rep(1, nrow(.)))
 
 dat_quad2 <-    dat_quad2 %>%
     drop_na() %>%
     rename(con=concordance) %>%
     mutate(type = str_replace(type, "cox", "coxph"),
            type = str_replace(type, "rid", "ridge"),
-           run = rep(1, nrow(.)),
-           quad = case_when(con > median(con) &
-                            aic <= median(aic) ~ 1,
-                            con > median(con) &
-                            aic > median(aic) ~ 2,
-                            con <= median(con) &
-                            aic <= median(aic) ~ 3,
-                            con <= median(con) &
-                            aic > median(aic) ~ 4
-                           )
-          )
+           run = rep(1, nrow(.)))
 
 dat_quad3 <-    dat_quad3 %>%
     drop_na() %>%
     rename(con=concordance) %>%
     mutate(type = str_replace(type, "cox", "coxph"),
            type = str_replace(type, "rid", "ridge"),
-           run = rep(2, nrow(.)),
-           quad = rep(5, nrow(.)))
+           run = rep(2, nrow(.)))
 
 dat_quad4 <-    dat_quad4 %>%
     drop_na() %>%
     rename(con=concordance) %>%
     mutate(type = str_replace(type, "cox", "coxph"),
            type = str_replace(type, "rid", "ridge"),
-           run = rep(3, nrow(.)),
-           quad = rep(6, nrow(.)))
+           run = rep(3, nrow(.)))
 
 dat_quad <- bind_rows(dat_quad1,
                       dat_quad2,
                       dat_quad3,
                       dat_quad4) %>%
-    mutate(quad = as.factor(quad)) %>%
-    mutate(quad = fct_recode(quad,
-                             "1A" = '1',
-                             "1B" = '2',
-                             "1C" = '3',
-                             "1D" = '4',
-                             "2" = '5',
-                             "3" = '6'))
+            mutate(run = as.factor(run))
 
 #dat_quad <- dat_quad %>%
 #    mutate(quadrun = interaction(quad, run))
@@ -90,9 +62,9 @@ dat_quad %>%
     ggplot(aes(x = aic,
                y = con,
                size = n_vars,
-               colour = quad)) +
+               colour = run)) +
 geom_point(aes(shape = factor(type)),
-           #size = 3,
+           alpha = 0.75,
            stroke = 1) +
 scale_shape(solid = FALSE) +
            theme_minimal() +
@@ -122,25 +94,13 @@ df_coef$name <- gsub("ridge\\(|\\)", "", df_coef$name)
 df_coef %>%
     filter(!between(hazard_ratio, .99, 1.01),
            name!="HSAITMOR",
-           name!="age_strat",
-           name!="age_strat2",
-           name!="age_strat3",
-           name!="age_strat4",
-           name!="HAJ0",
-           name!="HAA3",
-           name!="HAG1",
-           name!="HAQ7",
-           name!="HAN9",
-           name!="",
-           name!="HAT29",
-           name!="DMPSTAT",
            name!="WTPXRP2") %>%
     mutate(coef_pvalue = if_else(near(coef_pvalue, 0),
                                  coef_pvalue+0.1^17,
                                  coef_pvalue)) %>%
     ggplot(aes(x = log2(hazard_ratio),
                y = -log10(coef_pvalue),
-               colour = quad)) +
+               colour = run)) +
            labs(colour = "Group",
                 x = 'log2 Hazard Ratio',
                 y = '-log10 p-value') +
@@ -155,8 +115,6 @@ df_coef %>%
                      check_overlap = TRUE) +
            theme_minimal() +
            theme(plot.margin = margin(t = -15))
-
-
 
 ggsave(here("img/2-volcano-final.pdf"))
 ggsave(here("img/2-volcano-final.png"))
@@ -187,18 +145,6 @@ df_sig$ord_name <- factor(df_sig$name, levels=ord$name)
 df_sig %>%
     drop_na() %>%
     filter(name!="HSAITMOR",
-           name!="age_strat",
-           name!="age_strat2",
-           name!="age_strat3",
-           name!="age_strat4",
-           name!="HAJ0",
-           name!="HAA3",
-           name!="HAG1",
-           name!="HAQ7",
-           name!="HAN9",
-           name!="",
-           name!="HAT29",
-           name!="DMPSTAT",
            name!="WTPXRP2") %>%
     mutate_if(is.integer, as.factor) %>%
     ggplot(aes(ord_name,fill=quad)) +

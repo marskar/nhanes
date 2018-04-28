@@ -30,12 +30,12 @@ chsn <- c(
 
 #+ remove-variables
 #Variables to be removed from the model
-remv <- c(
-          "HAN9", #remove age variables
-          "HAQ7",
-          "HAT29",
-          "HAJ0"
-         )
+#remv <- c(
+#          "HAN9", #remove age variables
+#          "HAQ7",
+#          "HAT29",
+#          "HAJ0"
+#         )
 
 path <- 'dat/3-clean-complete-cases.rds'
 
