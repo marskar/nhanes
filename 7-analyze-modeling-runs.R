@@ -92,7 +92,7 @@ dat_quad %>%
                size = n_vars,
                colour = quad)) +
 geom_point(aes(shape = factor(type)),
-           #size = 3,
+           alpha = 0.75,
            stroke = 1) +
 scale_shape(solid = FALSE) +
            theme_minimal() +
@@ -140,10 +140,12 @@ df_coef %>%
                                  coef_pvalue)) %>%
     ggplot(aes(x = log2(hazard_ratio),
                y = -log10(coef_pvalue),
-               colour = quad)) +
+               colour = quad,
+               shape=type)) +
            labs(colour = "Group",
                 x = 'log2 Hazard Ratio',
-                y = '-log10 p-value') +
+                y = '-log10 p-value',
+                shape = "Model Type") +
            geom_point(alpha = 0.5,
                       size = 1,
                       stroke = 1) +
@@ -154,7 +156,8 @@ df_coef %>%
                      show.legend = FALSE,
                      check_overlap = TRUE) +
            theme_minimal() +
-           theme(plot.margin = margin(t = -15))
+           theme(plot.margin = margin(t = -15)) +
+           geom_hline(yintercept = 10)
 
 
 
@@ -170,7 +173,7 @@ df_sig %>% glimpse
 ord <- df_sig %>%
     count(name) %>%
     arrange(n) %>%
-    filter(n>15) %>%
+    filter(n>80) %>%
     select(name)
 
 #create name factor variable with levels ordered by count
@@ -216,6 +219,21 @@ ggsave(here("img/3-varbar-final.png"))
 
 # Table 1
 df_sig %>%
+    drop_na() %>%
+    filter(name!="HSAITMOR",
+           name!="age_strat",
+           name!="age_strat2",
+           name!="age_strat3",
+           name!="age_strat4",
+           name!="HAJ0",
+           name!="HAA3",
+           name!="HAG1",
+           name!="HAQ7",
+           name!="HAN9",
+           name!="",
+           name!="HAT29",
+           name!="DMPSTAT",
+           name!="WTPXRP2") %>%
     group_by(quad) %>%
     rename(Name = name) %>%
     summarise(n = n()) %>%
@@ -224,9 +242,25 @@ df_sig %>%
 
 # Table 2
 df_sig %>%
+    drop_na() %>%
+    filter(name!="HSAITMOR",
+           name!="age_strat",
+           name!="age_strat2",
+           name!="age_strat3",
+           name!="age_strat4",
+           name!="HAJ0",
+           name!="HAA3",
+           name!="HAG1",
+           name!="HAQ7",
+           name!="HAN9",
+           name!="",
+           name!="HAT29",
+           name!="DMPSTAT",
+           name!="WTPXRP2") %>%
     group_by(name) %>%
     rename(Name = name) %>%
-    summarise(medianHR = median(HR),
+    summarise(medianHR = round(median(hazard_ratio), 2),
               n = n()) %>%
     arrange(desc(n)) %>%
+    head(n=10) %>%
     knitr::kable()

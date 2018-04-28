@@ -9,14 +9,15 @@ endif
 set shortmess=aoO
 badd +55 9-cap-nhanes.Rmd
 badd +1 kod/get_modelstats.R
-badd +10 3-clean-complete-cases.R
+badd +44 3-clean-complete-cases.R
 badd +29 2-join-complete-cases.R
 badd +8 citations.R
 badd +666 term://.//19160:R\ 
-badd +495 bibliography.bib
+badd +506 bibliography.bib
 badd +18 7-analyze-modeling-runs2.R
-badd +30 6-model-third-run.R
-badd +1 7-analyze-modeling-runs.R
+badd +12 6-model-third-run.R
+badd +108 7-analyze-modeling-runs.R
+badd +4 tmp.R
 argglobal
 silent! argdel *
 $argadd 9-cap-nhanes.Rmd
@@ -42,11 +43,11 @@ silent! normal! zE
 normal! zo
 41
 normal! zo
-let s:l = 50 - ((1 * winheight(0) + 19) / 39)
+let s:l = 95 - ((15 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-50
+95
 normal! 0
 lcd ~/gdrive/nhanes
 tabedit ~/gdrive/nhanes/7-analyze-modeling-runs.R
@@ -70,11 +71,11 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 216 - ((22 * winheight(0) + 19) / 39)
+let s:l = 266 - ((38 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-216
+266
 normal! 0
 lcd ~/gdrive/nhanes
 wincmd w
@@ -88,11 +89,11 @@ setlocal fdl=0
 setlocal fml=1
 setlocal fdn=20
 setlocal fen
-let s:l = 2760 - ((10 * winheight(0) + 19) / 39)
+let s:l = 3008 - ((26 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-2760
+3008
 normal! 0
 lcd ~/gdrive/nhanes
 wincmd w
