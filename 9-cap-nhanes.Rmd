@@ -72,35 +72,35 @@ We present the data from thousands of Cox Proportional Hazards models (n = 3789)
 
 The Akaike Information Criterion (AIC) [@Gonen_2005] and concordance values [@Bozdogan_1987] for all models are plotted in Figure 1. The models from the third iteration (Figure 1, Group 3, pink) had the highest concordance values overall, indicating that the addition of the 8 non-randomized predictor variables led to higher discriminatory power between low and high-risk individuals. The gains in concordance seem to be largely due to the addition of the age, sex, and ethnicity variables as the concordance values we obtained from the second (Figure 1, Group 2) and third (Figure 1, Group 2) iterations were similar. Interestingly, models from iteration all had concordance values of 84 or higher (Figure 1, black horizontal line), while the range of AIC values was roughly the same in all three groups of models (Figure 1). This finding suggests that while concordance can differentiate between models from the three iterations, AIC by itself is unable to make this distinction.
 
+![**Cox Proportional Hazards models (n=3789) with (triangle) and without (circle) ridge penalties on 1 to 50 variables, split into quadrants based on Concordance (y-axis) and AIC (x-axis) values.** Each point in Figure 1 represents a Cox Proportional Hazards model. The size of the point is relative to the number of variables in the model it represents, while the shape corresponds to whether ridge penalties were applied (triangle) or not (circle). The color of points in Figure 1 shows whether the models had 5 constant predictor variables in addition to 1 to 45 random variables (Group 2; pink) or 1 to 50 randomized variables (Group 1). The models in Group 1 were further color coded by quadrants: high-concordance and low-AIC (Group 1A; salmon), high-concordance and high-AIC (Group 1B; gold), low-concordance and low-AIC (Group 1C; green), low-concordance and high-AIC (Group 1D; blue).](img/1-quad-final.pdf){width=100%}
+
 The addition of a metric like AIC is important, because it serves to provide a balance of goodness-of-fit and model complexity. Concordance, unlike AIC, does not take into account the complexity of a model. As follows, larger models tended to have higher concordance values, but also higher AIC values, while ridge penalization controls this increase in AIC as models become larger (Figure 1). The relationship between model size and concordance appears to plateau as concordance increases (Figure 1), which suggests that the models are reaching the limit of what is possible with the available 243 variables. Though there is almost certainly another combination of variables that would lead to further improvements in concordance, our approach allowed us to generate a series of models that perform well without the need to test every possible combination of the variables.
 
 To choose variables to be included as non-randomized variables, we consulted the NHANES variables descriptions available on the [Centers for Disease Control (CDC) - National Center for Health Statistics (NCHS) website](https://wwwn.cdc.gov/nchs/nhanes/nhanes3/DataFiles.aspx) and for the third iteration in particular we only considered variables that had p-values lower than 10^-10^ (Figure 2, black horizontal line). It would be possible to introduce a threshold for hazard ratios (Figure 2, x-axis), but this approach would tend to select models without ridge penalties. The coefficients in ridge penalized models are shrunk based on the penalty that is applied, which in this case means that ridge penalized models have hazard ratios closer to zero. While the significance and hazard ratios of variables depend on the other variables in the model, our method allows us to survey the landscape of p-values and hazard ratios of variables in the models trained (Figure 2).
 
-The variable that appeared most frequently as highly significant across the all of the models was age (Figure 3, `HSAGEIR`). When focusing on the Group 1 models, the most frequent highly significant variable was an interview question regarding general health (Figure 3, `HAQ1`). The other top 10 high-frequency highly significant variables were ethnicity (`DMAETHNR`), lifetime consumption of more than 100 cigarettes (`HAR1`), 3 variables related to physical activity (`HAT2`, `HAT10`, `HAT16`), and 3 variables that may be related to aging (`HAB7`, `HAK9`, and `HAP2`). The hazard ratios and 
+![Significance (y-axis) and Hazard Ratios (x-axis) of all variables, labeled with the quadrants of the 3789 Cox models as in Figure 1](img/2-volcano-final.pdf){width=100%}
 
-|Name     | Median HR|  n|  Description|
-|:--------|--------:|----:|:-------------|
-|HSAGEIR  |     1.04| 2016| Age in Years |
-|HAQ1     |     1.07| 1415| Condition of natural teeth: excellent...poor |
-|HAT2     |     1.50|  384| In the past month, did you jog or run |
-|HAT16    |     1.67|  256| In the past month, did you lift weights |
-|HAB7     |     0.99|  228| Past 12 mos, # times in nursing home |
-|DMAETHNR |     1.14|  224| Ethnicity |
-|HAK9     |     1.23|  216| # times per night you get up to urinate |
-|HAP2     |     0.81|  179| Do you use glasses, contacts, or both |
-|HAT10    |     1.43|  119| Past month, did you do other dancing |
-|HAR1     |     0.63|   96| Have you smoked 100+ cigarettes in life? |
+The variable that appeared most frequently as highly significant across the all of the models was age (Figure 3, `HSAGEIR`). When focusing on the Group 1 models, the most frequent highly significant variable was an interview question regarding general health (Figure 3, `HAQ1`). The other top 10 high-frequency highly significant variables were ethnicity (`DMAETHNR`), lifetime consumption of more than 100 cigarettes (`HAR1`), 3 variables related to physical activity (`HAT2`, `HAT10`, `HAT16`), and 3 variables that may be related to aging (`HAB7`, `HAK9`, and `HAP2`). The names, median hazard ratios, counts and descriptions of the ten most frequent highly significant variables are summarized in Table 1.
+
+![The ten variables that appeared most frequently as highly significant variables in the 3789 Cox models trained on NHANES III data](img/3-varbar-final.pdf){width=100%}
+
+|Name     | Median HR|    n|  Description |
+|:--------|---------:|----:|:-------------|
+|HSAGEIR  |      1.04| 2016| Age in Years |
+|HAQ1     |      1.07| 1415| How would you describe the condition of your natural teeth (excellent, very good, good, fair or poor)? |
+|HAT2     |      1.50|  384| In the past month, did you jog or run? |
+|HAT16    |      1.67|  256| In the past month, did you lift weights? |
+|HAB7     |      0.99|  228| In the past 12 months, how many times were you in a nursing home? |
+|DMAETHNR |      1.14|  224| Ethnicity |
+|HAK9     |      1.23|  216| How many times per night do you usually get up to urinate? |
+|HAP2     |      0.81|  179| Do you use glasses, contacts, or both? |
+|HAT10    |      1.43|  119| In the past month, did you do other dancing? |
+|HAR1     |      0.63|   96| Have you smoked at least 100 cigarettes during your entire life? |
+
 : Description of Highly Significant Variables that Appeared Most Frequently
-
-
-![**Cox Proportional Hazards models (n=3789) with (triangle) and without (circle) ridge penalties on 1 to 50 variables, split into quadrants based on Concordance (y-axis) and AIC (x-axis) values.** Each point in Figure 1 represents a Cox Proportional Hazards model. The size of the point is relative to the number of variables in the model it represents, while the shape corresponds to whether ridge penalties were applied (triangle) or not (circle). The color of points in Figure 1 shows whether the models had 5 constant predictor variables in addition to 1 to 45 random variables (Group 2; pink) or 1 to 50 randomized variables (Group 1). The models in Group 1 were further color coded by quadrants: high-concordance and low-AIC (Group 1A; salmon), high-concordance and high-AIC (Group 1B; gold), low-concordance and low-AIC (Group 1C; green), low-concordance and high-AIC (Group 1D; blue).](img/1-quad-final.pdf){width=100%}
-
-![Significance (y-axis) and Hazard Ratios (x-axis) of all variables, labeled with the quadrants of the 960 Cox models as in Figure 1](img/2-volcano-final.pdf){width=100%}
-
-![Variables that appeared most frequently, labeled with the quadrants of the 960 Cox models as in Figures 1 and 2](img/3-varbar-final.pdf){width=100%}
 
 ## Discussion
 
-Exploring all of possible combinations of variables, known as best subset selection, would be computationally intensive and time consuming task. 
+Exploring all of possible combinations of variables, known as best subset selection, would be computationally intensive and time consuming task.
 In addition to being computationally intensive and time consuming, best subset selection methods typically use a single metric to assess  
 The work described here constitutes an exploratory analysis of the NHANES III dataset that employs an iterative strategy to generation of cancer risk prediction models. In this approach, a large number of models are generated randomly to inform variable selection and guide training of models in future iterations. In addition to providing insight into cancer risk factors measured in the NHANES III dataset we hope to develop a general methodology that can be applied to large, high-dimensional cohort study data.
