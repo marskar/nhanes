@@ -117,7 +117,7 @@ df_coef <- dat_quad %>%
 
 #remove ridge from variable name
 df_coef$name <- gsub("ridge\\(|\\)", "", df_coef$name)
-
+nrow(df_coef)
 # Figure 2
 df_coef %>%
     filter(!between(hazard_ratio, .99, 1.01),

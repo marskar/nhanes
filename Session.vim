@@ -43,12 +43,12 @@ silent! normal! zE
 normal! zo
 41
 normal! zo
-let s:l = 95 - ((15 * winheight(0) + 19) / 39)
+let s:l = 75 - ((1 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-95
-normal! 0
+75
+normal! 0275|
 lcd ~/gdrive/nhanes
 tabedit ~/gdrive/nhanes/7-analyze-modeling-runs.R
 set splitbelow splitright
@@ -71,12 +71,12 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 266 - ((38 * winheight(0) + 19) / 39)
+let s:l = 120 - ((8 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-266
-normal! 0
+120
+normal! 012|
 lcd ~/gdrive/nhanes
 wincmd w
 argglobal
@@ -89,12 +89,12 @@ setlocal fdl=0
 setlocal fml=1
 setlocal fdn=20
 setlocal fen
-let s:l = 3008 - ((26 * winheight(0) + 19) / 39)
+let s:l = 3021 - ((24 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-3008
-normal! 0
+3021
+normal! 05|
 lcd ~/gdrive/nhanes
 wincmd w
 exe 'vert 1resize ' . ((&columns * 71 + 71) / 143)
