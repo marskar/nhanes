@@ -43,12 +43,12 @@ silent! normal! zE
 normal! zo
 41
 normal! zo
-let s:l = 75 - ((1 * winheight(0) + 19) / 39)
+let s:l = 85 - ((9 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-75
-normal! 0275|
+85
+normal! 0181|
 lcd ~/gdrive/nhanes
 tabedit ~/gdrive/nhanes/7-analyze-modeling-runs.R
 set splitbelow splitright
