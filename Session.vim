@@ -36,19 +36,21 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-1,23fold
+1,15fold
 25,39fold
 41,53fold
+1
+normal! zo
 25
 normal! zo
 41
 normal! zo
-let s:l = 85 - ((9 * winheight(0) + 19) / 39)
+let s:l = 85 - ((5 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
 85
-normal! 0181|
+normal! 0554|
 lcd ~/gdrive/nhanes
 tabedit ~/gdrive/nhanes/7-analyze-modeling-runs.R
 set splitbelow splitright
@@ -71,12 +73,12 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 120 - ((8 * winheight(0) + 19) / 39)
+let s:l = 229 - ((25 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-120
-normal! 012|
+229
+normal! 0
 lcd ~/gdrive/nhanes
 wincmd w
 argglobal
@@ -89,17 +91,17 @@ setlocal fdl=0
 setlocal fml=1
 setlocal fdn=20
 setlocal fen
-let s:l = 3021 - ((24 * winheight(0) + 19) / 39)
+let s:l = 3244 - ((30 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-3021
-normal! 05|
+3244
+normal! 0
 lcd ~/gdrive/nhanes
 wincmd w
 exe 'vert 1resize ' . ((&columns * 71 + 71) / 143)
 exe 'vert 2resize ' . ((&columns * 71 + 71) / 143)
-tabnext 1
+tabnext 2
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf
 endif

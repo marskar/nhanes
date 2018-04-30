@@ -104,8 +104,11 @@ scale_shape(solid = FALSE) +
                 colour = "Group") +
     geom_hline(yintercept = 83.5)
 
-ggsave(here("img/1-quad-final.pdf"))
-ggsave(here("img/1-quad-final.png"))
+#ggsave(here("img/1-quad-final.pdf"))
+#ggsave(here("img/1-quad-final.png"))
+
+ggsave(here("img/1-quad-final-3w.pdf"), width = 3)
+ggsave(here("img/1-quad-final100dpi.png"), dpi = 100)
 
 # Unpack names using one of the list columns
 namevec <- names(unlist(dat_quad$hr_ci_lower))
@@ -160,9 +163,11 @@ df_coef %>%
            geom_hline(yintercept = 10)
 
 
+ggsave(here("img/2-volcano-final-3w.pdf"), width = 3)
+ggsave(here("img/2-volcano-final100dpi.png"), dpi = 100)
 
-ggsave(here("img/2-volcano-final.pdf"))
-ggsave(here("img/2-volcano-final.png"))
+#ggsave(here("img/2-volcano-final.pdf"))
+#ggsave(here("img/2-volcano-final.png"))
 
 #filter out p-values greater than .1^10
 df_sig <- df_coef %>%
@@ -214,8 +219,11 @@ df_sig %>%
                        x = 'Variable Name',
                        y = 'Count')
 
-ggsave(here("img/3-varbar-final.pdf"))
-ggsave(here("img/3-varbar-final.png"))
+ggsave(here("img/3-varbar-final-3w.pdf"), width = 3)
+ggsave(here("img/3-varbar-final100dpi.png"), dpi = 100)
+
+#ggsave(here("img/3-varbar-final.pdf"))
+#ggsave(here("img/3-varbar-final.png"))
 
 # Table 1
 df_sig %>%
