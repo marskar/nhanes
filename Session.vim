@@ -101,7 +101,7 @@ lcd ~/gdrive/nhanes
 wincmd w
 exe 'vert 1resize ' . ((&columns * 71 + 71) / 143)
 exe 'vert 2resize ' . ((&columns * 71 + 71) / 143)
-tabnext 2
+tabnext 1
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf
 endif
