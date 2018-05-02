@@ -105,17 +105,20 @@ scale_shape(solid = FALSE) +
                 shape = "Model Type",
                 colour = "Group") +
     geom_hline(yintercept = 83.5) +
-    scale_color_manual(values = c("darkgreen",
-                                  "darkblue",
-                                  "#56B4E9",
-                                  "darkgrey",
+    scale_color_manual(breaks = c("3", "2",
+                                  "1A","1B",
+                                  "1C","1D"),
+                       values = c("forestgreen",
+                                  "darkturquoise",
+                                  "blue",
+                                  "darkviolet",
                                   "darkorange",
-                                  "red"))
+                                  "red")) +
+    scale_size(breaks = c(50, 25, 10, 5, 1))
 
-#ggsave(here("img/1-quad-final.pdf"))
-#ggsave(here("img/1-quad-final.png"))
-
-ggsave(here("img/1-quad-final-3w.pdf"), width = 3)
+ggsave(here("img/1-quad-final.pdf"))
+ggsave(here("img/1-quad-final300dpi.png"))
+ggsave(here("img/1-quad-final200dpi.png"), dpi = 200)
 ggsave(here("img/1-quad-final100dpi.png"), dpi = 100)
 
 # Unpack names using one of the list columns
@@ -171,18 +174,20 @@ df_coef %>%
            theme_minimal() +
            theme(plot.margin = margin(t = -15)) +
            geom_hline(yintercept = 10) +
-           scale_color_manual(values = c("darkgreen",
-                                         "darkblue",
-                                         "#56B4E9",
-                                         "darkgrey",
+           scale_color_manual(breaks = c("3", "2",
+                                         "1A","1B",
+                                         "1C","1D"),
+                              values = c("forestgreen",
+                                         "darkturquoise",
+                                         "blue",
+                                         "darkviolet",
                                          "darkorange",
                                          "red"))
 
-ggsave(here("img/2-volcano-final-3w.pdf"), width = 3)
+ggsave(here("img/2-volcano-final.pdf"))
+ggsave(here("img/2-volcano-final300dpi.png"))
+ggsave(here("img/2-volcano-final200dpi.png"), dpi = 200)
 ggsave(here("img/2-volcano-final100dpi.png"), dpi = 100)
-
-#ggsave(here("img/2-volcano-final.pdf"))
-#ggsave(here("img/2-volcano-final.png"))
 
 #filter out p-values greater than .1^10
 df_sig <- df_coef %>%
@@ -232,13 +237,21 @@ df_sig %>%
     theme(legend.position = "top") +
                   labs(fill = "Group",
                        x = 'Variable Name',
-                       y = 'Count')
+                       y = 'Count') +
+    scale_fill_manual(breaks = c( "1A","1B",
+                                  "1C","1D",
+                                  "2", "3"),
+                      values = c("forestgreen",
+                                 "darkturquoise",
+                                 "blue",
+                                 "darkviolet",
+                                 "darkorange",
+                                 "red"))
 
-ggsave(here("img/3-varbar-final-3w.pdf"), width = 3)
+ggsave(here("img/3-varbar-final300dpi.png"))
+ggsave(here("img/3-varbar-final200dpi.png"), dpi = 200)
 ggsave(here("img/3-varbar-final100dpi.png"), dpi = 100)
-
-#ggsave(here("img/3-varbar-final.pdf"))
-#ggsave(here("img/3-varbar-final.png"))
+ggsave(here("img/3-varbar-final.pdf"))
 
 # Table 1
 df_sig %>%
