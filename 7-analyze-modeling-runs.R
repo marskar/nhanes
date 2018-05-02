@@ -87,6 +87,8 @@ glimpse(dat_quad)
 
 # Figure 1
 dat_quad %>%
+    mutate(type = str_replace(type, "coxph", "Cox"),
+           type = str_replace(type, "ridge", "Ridge")) %>%
     ggplot(aes(x = aic,
                y = con,
                size = n_vars,
@@ -102,7 +104,13 @@ scale_shape(solid = FALSE) +
                 size = "Model Size",
                 shape = "Model Type",
                 colour = "Group") +
-    geom_hline(yintercept = 83.5)
+    geom_hline(yintercept = 83.5) +
+    scale_color_manual(values = c("darkgreen",
+                                  "darkblue",
+                                  "#56B4E9",
+                                  "darkgrey",
+                                  "darkorange",
+                                  "red"))
 
 #ggsave(here("img/1-quad-final.pdf"))
 #ggsave(here("img/1-quad-final.png"))
@@ -138,6 +146,8 @@ df_coef %>%
            name!="HAT29",
            name!="DMPSTAT",
            name!="WTPXRP2") %>%
+    mutate(type = str_replace(type, "coxph", "Cox"),
+           type = str_replace(type, "ridge", "Ridge")) %>%
     mutate(coef_pvalue = if_else(near(coef_pvalue, 0),
                                  coef_pvalue+0.1^17,
                                  coef_pvalue)) %>%
@@ -160,8 +170,13 @@ df_coef %>%
                      check_overlap = TRUE) +
            theme_minimal() +
            theme(plot.margin = margin(t = -15)) +
-           geom_hline(yintercept = 10)
-
+           geom_hline(yintercept = 10) +
+           scale_color_manual(values = c("darkgreen",
+                                         "darkblue",
+                                         "#56B4E9",
+                                         "darkgrey",
+                                         "darkorange",
+                                         "red"))
 
 ggsave(here("img/2-volcano-final-3w.pdf"), width = 3)
 ggsave(here("img/2-volcano-final100dpi.png"), dpi = 100)

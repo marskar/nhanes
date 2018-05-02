@@ -7,16 +7,16 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +55 9-cap-nhanes.Rmd
+badd +70 9-cap-nhanes.Rmd
 badd +1 kod/get_modelstats.R
 badd +44 3-clean-complete-cases.R
 badd +29 2-join-complete-cases.R
 badd +8 citations.R
 badd +666 term://.//19160:R\ 
-badd +506 bibliography.bib
+badd +557 bibliography.bib
 badd +18 7-analyze-modeling-runs2.R
 badd +12 6-model-third-run.R
-badd +108 7-analyze-modeling-runs.R
+badd +277 7-analyze-modeling-runs.R
 badd +4 tmp.R
 argglobal
 silent! argdel *
@@ -37,20 +37,28 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 1,15fold
-25,39fold
-41,53fold
+1,23fold
+1,24fold
+25,35fold
+37,49fold
 1
 normal! zo
+1
+normal! zo
+1
+normal! zo
+1
+normal! zc
 25
 normal! zo
-41
+37
 normal! zo
-let s:l = 85 - ((5 * winheight(0) + 19) / 39)
+let s:l = 70 - ((1 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-85
-normal! 0554|
+70
+normal! 0
 lcd ~/gdrive/nhanes
 tabedit ~/gdrive/nhanes/7-analyze-modeling-runs.R
 set splitbelow splitright
@@ -73,11 +81,11 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 229 - ((25 * winheight(0) + 19) / 39)
+let s:l = 180 - ((18 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-229
+180
 normal! 0
 lcd ~/gdrive/nhanes
 wincmd w
@@ -91,11 +99,11 @@ setlocal fdl=0
 setlocal fml=1
 setlocal fdn=20
 setlocal fen
-let s:l = 3244 - ((30 * winheight(0) + 19) / 39)
+let s:l = 3343 - ((38 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-3244
+3343
 normal! 0
 lcd ~/gdrive/nhanes
 wincmd w
