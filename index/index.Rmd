@@ -171,9 +171,8 @@ We demonstrated the ability of our method to generate models that predict lethal
 
 ## Connections to MPH Goals Analysis {-}
 
-My MPH experience at Johns Hopkins has been absolutely transformative. Though I started my MPH studies with a strong background in science, I had no experience with public health or population science. Similarly, while I was comfortable with R programming, I did not know the first thing about survey data, let along how to conduct complex survey analyses in R. In my Goals Analysis Plan, I outlined my goal of broadening my horizons in three areas: substantive (domain) knowledge, statistics (mathematics), and technical (programming) skills. , is This NHANES III Research Report Capstone Project is testament to the skills I honed and the knowledge I gained over the past year and also perfectly aligns with my interests. I look forward to building upon this capstone project as continue my career in cancer prevention research.
+My Master of Public Health (MPH) experience at Johns Hopkins has been absolutely transformative. Though I started my MPH studies with a strong background in science, I had no experience with public health or population science. Similarly, while I was comfortable with R programming, I did not know the first thing about survey data, let along how to conduct complex survey analyses in R. In my Goals Analysis Plan, I outlined my goal of broadening my horizons in three areas: 1) substantive expertise (domain knowledge), 2) statistics and mathematics, and 3) technical (programming) skills [@Conway_2010]. Looking back on the progress I made during my MPH studies, I am confident that I have achieved my goals. This NHANES III Research Report Capstone Project is testament to the skills I honed and the knowledge I gained over the past year and also perfectly aligns with my interests. I look forward to building upon this Capstone as I continue my career in cancer prevention research.
 
-In terms of substantive knowledge, I wanted to focus on cancer epidemiology
 
 ## References
 

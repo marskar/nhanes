@@ -79,11 +79,11 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 302 - ((38 * winheight(0) + 19) / 39)
+let s:l = 258 - ((9 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-302
+258
 normal! 0
 lcd ~/gdrive/nhanes
 wincmd w
@@ -97,17 +97,17 @@ setlocal fdl=0
 setlocal fml=1
 setlocal fdn=20
 setlocal fen
-let s:l = 3636 - ((38 * winheight(0) + 19) / 39)
+let s:l = 3620 - ((37 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-3636
+3620
 normal! 0
 lcd ~/gdrive/nhanes
 wincmd w
 exe 'vert 1resize ' . ((&columns * 71 + 71) / 143)
 exe 'vert 2resize ' . ((&columns * 71 + 71) / 143)
-tabnext 2
+tabnext 1
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf
 endif

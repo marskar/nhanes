@@ -116,11 +116,5 @@ Regardless of the algorithms or thresholds used, the final result of our approac
 
 We demonstrated the ability of our method to generate models that predict lethal cancer risk in the NHANES III dataset with high accuracy ($concordance \geq 84$). It remains to be seen, whether our approach could be generalizable to other studies and other outcomes. NHANES III does not include cancer-type-specific mortality data, but other studies, such as the Atherosclerosis Risk in Communities study (ARIC) [@ARIC_1989; @Joshu_2017], may provide the opportunity to generate and assess models that predict mortality or incidence of a specific type of cancer. As a continuation of this project, we expand the methods described here into a general methodology that can be applied beyond NHANES III to other large, high-dimensional cohort studies. In addition to generalization to other studies, future work on this project will include the creation of a software package that encapsulates all of the relevant code and a graphical user interface that facilitates data exploration, model parameter modification and variable selection.
 
-## Connections to MPH Goals Analysis
-
-My MPH experience at Johns Hopkins has been absolutely transformative. Though I started my MPH studies with a strong background in science, I had no experience with public health or population science. Similarly, while I was comfortable with R programming, I did not know the first thing about survey data, let along how to conduct complex survey analyses in R. In my Goals Analysis Plan, I outlined my goal of broadening my horizons in three areas: substantive (domain) knowledge, statistics (mathematics), and technical (programming) skills. , is This NHANES III Research Report Capstone Project is testament to the skills I honed and the knowledge I gained over the past year and also perfectly aligns with my interests. I look forward to building upon this capstone project as continue my career in cancer prevention research.
-
-In terms of substantive knowledge, I wanted to focus on cancer epidemiology
-
 ## References
 
