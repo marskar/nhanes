@@ -36,27 +36,27 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-1,15fold
-1,23fold
-1,24fold
+14,15fold
+14,23fold
+14,24fold
 25,35fold
 37,49fold
-1
+14
 normal! zo
-1
+14
 normal! zo
-1
+14
 normal! zo
 25
 normal! zo
 37
 normal! zo
-let s:l = 75 - ((6 * winheight(0) + 19) / 39)
+let s:l = 17 - ((10 * winheight(0) + 19) / 39)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-75
-normal! 0841|
+17
+normal! 0
 lcd ~/gdrive/nhanes
 tabedit ~/gdrive/nhanes/7-analyze-modeling-runs.R
 set splitbelow splitright
@@ -107,7 +107,7 @@ lcd ~/gdrive/nhanes
 wincmd w
 exe 'vert 1resize ' . ((&columns * 71 + 71) / 143)
 exe 'vert 2resize ' . ((&columns * 71 + 71) / 143)
-tabnext 1
+tabnext 2
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf
 endif

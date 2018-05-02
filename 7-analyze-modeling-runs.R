@@ -246,7 +246,8 @@ df_sig %>%
                                  "blue",
                                  "darkviolet",
                                  "darkorange",
-                                 "red"))
+                                 "red")) +
+  theme(plot.margin=unit(c(0,1,0,0),"cm"))
 
 ggsave(here("img/3-varbar-final300dpi.png"))
 ggsave(here("img/3-varbar-final200dpi.png"), dpi = 200)
