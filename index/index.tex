@@ -140,8 +140,8 @@ exposures in relation to a given outcome.
 
 \textbf{Objective:} To explore the exposures measured in the Third
 National Health and Nutrition Examination Survey (NHANES III) dataset in
-search of factors associated with cancer mortality and to assess methods
-for lethal cancer risk prediction model variable selection.
+search of factors associated with cancer mortality and to assess a
+variable selection method for cancer risk prediction models.
 
 \textbf{Methods:} We fit thousands of Cox proportional hazards models
 with and without ridge penalties to randomly selected subsets of up to
@@ -212,8 +212,8 @@ and mortality.
     
     \textbf{Objective:} To explore the exposures measured in the Third
     National Health and Nutrition Examination Survey (NHANES III) dataset in
-    search of factors associated with cancer mortality and to assess methods
-    for lethal cancer risk prediction model variable selection.
+    search of factors associated with cancer mortality and to assess a
+    variable selection method for cancer risk prediction models.
     
     \textbf{Methods:} We fit thousands of Cox proportional hazards models
     with and without ridge penalties to randomly selected subsets of up to
@@ -257,7 +257,7 @@ race/ethnicity, single nucleotide polymorphisms (SNPs), and family
 history of disease. According to a 2018 study by Islami and colleagues
 {[}1{]}, modifiable risk factors are responsible for 42\% of all cancer
 cases and 45\% of all cancer deaths. This finding suggests that cancer
-prevention strategies that target modifiable risk factors have the
+prevention strategies which target modifiable risk factors have the
 potential to almost halve cancer incidence and mortality in the United
 States. A near two-fold reduction in cancer cases and deaths may seem
 far-fetched, but cancer incidence and mortality in United Status have
@@ -460,12 +460,12 @@ Groups 1A-D; green, cyan, blue, purple) were fully randomized in terms
 of the predictor variables that were included, while the next two
 iterations (Figure 1; Groups 2-3; orange, red) consisted of models that
 started with 3 and 8 non-randomized variables, respectively, before the
-addition of randomly chosen variables. The 3 variables included in the
-second and third iteration were age, sex, and race/ethnicity, whereas
-the final iteration contained an additional 5 variables, which appeared
-frequently as highly significant (p \textless{} 10\textsuperscript{-10})
-variables in the previous iterations. In all cases, the models contained
-up to 50 predictor variables.
+addition of randomly chosen variables. The 3 variables included in both
+the second and third iteration were age, sex, and race/ethnicity,
+whereas the final iteration contained an additional 5 variables, which
+appeared frequently as highly significant (p \textless{}
+10\textsuperscript{-10}) variables in the previous iterations. In all
+cases, the models contained up to 50 predictor variables.
 
 The models from the third iteration (Figure 1; Group 3; red) had the
 highest concordance values overall, indicating that the addition of the
@@ -483,11 +483,10 @@ unable to make this distinction.
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth,height=0.6\textheight]{figure/1-quad-final.pdf}
-\caption{\textbf{Cancer Mortality Risk Prediction Models Trained on
-NHANES III Data.} Each point in the scatter plot represents a Cox
-proportional hazards model (n=3789) trained on NHANES III data. The
-sizes of the points are relative to the number of variables (maximum =
-50) in each the model, while the shapes correspond to whether ridge
+\caption{Cancer Mortality Risk Prediction Models. \break Each point in
+the scatter plot represents a Cox proportional hazards model (n = 3789).
+The sizes of the points are relative to the number of variables (maximum
+= 50) in each the model, while the shapes correspond to whether ridge
 penalties were applied (triangle) or not (circle). The colors of points
 distinguish between models that had 0 (Groups 1A-D; green, cyan, blue,
 purple), 3 (Group 2; orange) or 8 (Group 3; red) non-randomized
@@ -500,11 +499,11 @@ purple). All Group 3 models have concordance values of 84 or higher
 (black horizontal line).}
 \end{figure}
 The addition of a metric like AIC is important, because it serves to
-provide a balance of goodness-of-fit and model simplicity. Concordance,
-unlike AIC, does not take into account the complexity of a model. As
-follows, larger models tended to have higher concordance values, but
-also higher AIC values. We applied ridge penalties {[}26{]}, also known
-as L2 regularization {[}36{]}, to half of the models from all three
+balance goodness-of-fit and model simplicity. Concordance, unlike AIC,
+does not take into account the complexity of a model. As follows, larger
+models tended to have higher concordance values, but also higher AIC
+values. We applied ridge penalties {[}26{]}, also known as L2
+regularization {[}36{]}, to half of the models from all three
 iterations, and noted that ridge penalization controls this increase in
 AIC as models become larger (Figure 1). The relationship between model
 size and concordance appears to plateau as concordance increases (Figure
@@ -533,53 +532,59 @@ trained (Figure 2).
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth,height=0.6\textheight]{figure/2-volcano-final.pdf}
-\caption{\textbf{Predictor Variables from NHANES III Lethal Cancer Risk
-Prediction Models.} Each point in the volcano plot represents a
-predictor variable (n = 98787) from a Cox proportional hazards model (n
-= 3789) trained on NHANES III data. Variables are considered to be
-highly significant when their negative log10 p-values (y-axis) are above
-10 (black horizontal line), regardless of their log2 hazard ratios
-(x-axis). The shapes of points correspond to whether ridge penalties
-were applied (triangle) or not (circle). The colors of points describe
-the model each variable come from as in Figure 1.}
+\caption{Lethal Cancer Risk Predictor Variables. \break Each point in
+the volcano plot represents a predictor variable (n = 98787) from a Cox
+proportional hazards model (n = 3789) trained on NHANES III data.
+Variables are considered to be highly significant when their negative
+log10 p-values (y-axis) are above 10 (black horizontal line), regardless
+of their log2 hazard ratios (x-axis). The shapes of points correspond to
+whether ridge penalties were applied (triangle) or not (circle). The
+colors of points describe the model each variable come from as in Figure
+1.}
 \end{figure}
 The names, median hazard ratios, counts and descriptions of the ten most
 frequent highly significant variables are summarized in Table 1. The
-variable that appeared most frequently as highly significant across the
-all of the models was age (Figure 3; \texttt{HSAGEIR}). When focusing on
-the Group 1 models (Figure 3; Groups 1A-D; green, cyan, blue, purple),
-the most frequent highly significant variable was an interview question
-regarding dental health (Figure 3; \texttt{HAQ1}). The other top 10
-high-frequency highly significant variables were race/ethnicity
-(\texttt{DMAETHNR}), lifetime consumption of more than 100 cigarettes
-(\texttt{HAR1}), 3 variables related to physical activity
-(\texttt{HAT2}, \texttt{HAT10}, \texttt{HAT16}), and 3 variables that
-may be associated to aging (\texttt{HAB7}, \texttt{HAK9}, and
-\texttt{HAP2}). Interestingly, one of the variables, ``In the past 12
-months, how many times were you in a nursing home?'' (\texttt{HAB7}),
+variables descriptions are based on the
+\href{https://wwwn.cdc.gov/nchs/nhanes/nhanes3/DataFiles.aspx}{documentation
+on the NHANES III website}. Each row in Table 1 represents one of the
+ten predictor variables that appeared most frequently as highly
+significant (p \textless{} 10\textsuperscript{-10}) variables in the Cox
+models (n = 3789) trained on NHANES III data. The median hazard ratio
+(HR) and count (n) statistics describe only highly significant
+variables. The variable that appeared most frequently as highly
+significant across all of the models was age (Figure 3;
+\texttt{HSAGEIR}). When focusing on the Group 1 models (Figure 3; Groups
+1A-D; green, cyan, blue, purple), the most frequent highly significant
+variable was an interview question regarding dental health (Figure 3;
+\texttt{HAQ1}). The other top 10 high-frequency highly significant
+variables were race/ethnicity (\texttt{DMAETHNR}), lifetime consumption
+of more than 100 cigarettes (\texttt{HAR1}), 3 variables related to
+physical activity (\texttt{HAT2}, \texttt{HAT10}, \texttt{HAT16}), and 3
+variables that may be associated to aging (\texttt{HAB7}, \texttt{HAK9},
+and \texttt{HAP2}). Interestingly, one of the variables, ``In the past
+12 months, how many times were you in a nursing home?'' (\texttt{HAB7}),
 was present as a highly significant variable only in the second and
 third groups.
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth,height=0.6\textheight]{figure/3-varbar-final.pdf}
-\caption{The Ten Most Frequent, Highly Significant Predictor Variables.
-Each row in the table represents one of the ten predictor variables that
-appeared most frequently as highly significant (p \textless{}
-10\textsuperscript{-10}) variables in the Cox models (n = 3789) trained
-on NHANES III data. The median hazard ratio (HR) and count (n)
-statistics are calculated on highly significant variables only. The
-variables descriptions are based on the
-\href{https://wwwn.cdc.gov/nchs/nhanes/nhanes3/DataFiles.aspx}{documentation
-on the NHANES III website}.}
+\caption{Highly Significant Predictor Variable Frequency. \break Each
+bar represents the number of times (x-axis) a variables (y-axis)
+appeared in the 3789 Cox proportional hazards models. The colors of bars
+correspond to the proportion of variables that orginiated from each of
+the the four Group 1 subgroups (Groups 1A-D; green, cyan, blue, purple)
+and the subsequent iterations (Groups 2-3; orange, red), as in Figures 1
+and 2.}
 \end{figure}
-\begin{longtable}[]{@{}lrrl@{}}
-\caption{Ten Most Frequent Highly Significant Variables}\tabularnewline
+\begin{longtable}[]{@{}llll@{}}
+\caption{The Ten Most Frequent Highly Significant
+Variables}\tabularnewline
 \toprule
 \begin{minipage}[b]{0.21\columnwidth}\raggedright
 Name\strut
-\end{minipage} & \begin{minipage}[b]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[b]{0.23\columnwidth}\raggedright
 Median HR\strut
-\end{minipage} & \begin{minipage}[b]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[b]{0.12\columnwidth}\raggedright
 n\strut
 \end{minipage} & \begin{minipage}[b]{0.33\columnwidth}\raggedright
 Description\strut
@@ -589,9 +594,9 @@ Description\strut
 \toprule
 \begin{minipage}[b]{0.21\columnwidth}\raggedright
 Name\strut
-\end{minipage} & \begin{minipage}[b]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[b]{0.23\columnwidth}\raggedright
 Median HR\strut
-\end{minipage} & \begin{minipage}[b]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[b]{0.12\columnwidth}\raggedright
 n\strut
 \end{minipage} & \begin{minipage}[b]{0.33\columnwidth}\raggedright
 Description\strut
@@ -600,18 +605,18 @@ Description\strut
 \endhead
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HSAGEIR\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 1.04\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 2016\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 Age in Years\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HAQ1\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 1.07\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 1415\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 How would you describe the condition of your natural teeth (excellent,
@@ -619,91 +624,91 @@ very good, good, fair or poor)?\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HAT2\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 1.50\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 384\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 In the past month, did you jog or run?\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HAT16\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 1.67\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 256\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 In the past month, did you lift weights?\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HAB7\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 0.99\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 228\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 In the past 12 months, how many times were you in a nursing home?\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 DMAETHNR\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 1.14\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 224\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 Race/Ethnicity\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HAK9\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 1.23\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 216\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 How many times per night do you usually get up to urinate?\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HAP2\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 0.81\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 179\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 Do you use glasses, contacts, or both?\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HAT10\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 1.43\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 119\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 In the past month, did you do other dancing?\strut
 \end{minipage}\tabularnewline
 \begin{minipage}[t]{0.21\columnwidth}\raggedright
 HAR1\strut
-\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.23\columnwidth}\raggedright
 0.63\strut
-\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedleft
+\end{minipage} & \begin{minipage}[t]{0.12\columnwidth}\raggedright
 96\strut
 \end{minipage} & \begin{minipage}[t]{0.33\columnwidth}\raggedright
 Have you smoked at least 100 cigarettes during your entire life?\strut
 \end{minipage}\tabularnewline
 \bottomrule
 \end{longtable}
-The ranks of variables shown is Table 1 are determined by counts from
+The ranks of variables shown in Table 1 are determined by counts from
 all 3789 models, and thus are heavily influenced by the fact that some
 variables are included in all Group 2 (\texttt{HSAGEIR},
-\texttt{DMAETHNR}, and \texttt{HSSEX}) and 3 models (\texttt{HSAGEIR},
+\texttt{DMAETHNR}, and \texttt{HSSEX}) and Group 3 (\texttt{HSAGEIR},
 \texttt{DMAETHNR}, \texttt{HSSEX}, \texttt{HAB1}, \texttt{HAR1},
-\texttt{HAQ1}, \texttt{HAT2}, and \texttt{HAT10}). Table 1 therefore
-serves as a summary of all three iterations of modeling and statistical
-analysis. Rather than selecting the variables with the lowest p-values
-or highest hazard ratios, we chose to follow a strategy that counts the
-number of times a variable's significance crosses a p-value threshold.
-This type of frequency-based ranking of variables can be used to both
-guide future variable selection decisions and assess previous steps in
-the model building process.
+\texttt{HAQ1}, \texttt{HAT2}, and \texttt{HAT10}) models. Table 1
+therefore serves as a summary of all three iterations of modeling and
+statistical analysis. Rather than selecting the variables with the
+lowest p-values or highest hazard ratios, we chose to follow a strategy
+that counts the number of times a variable's significance crosses a
+p-value threshold. This type of frequency-based ranking of variables can
+be used to both guide future variable selection decisions and assess
+previous steps in the model building process.
 
 \hypertarget{discussion}{%
 \section*{Discussion}\label{discussion}}
@@ -723,19 +728,10 @@ To inform variable selection in subsequent iterations, we instead
 focused on the frequency with which variables had p-values below
 10\textsuperscript{-10}.
 
-The types of variables that were ranked highest in our present analysis
-(age, race/ethnicity, smoking and physical activity) are all already
-known to be strongly associated with cancer death. While obtaining the
-expected result serves to confirm the validity of our method, the main
-objective of this work is to provide insight that will lead to the
-identification of new cancer risk factors. To this end, our method will
-have to be refined to detect variables that weakly contribute to cancer
-risk or whose contribution is context-specific. In essence, our current
-approach aggregates information from across many models into a single
-statistic per variable. Variable selection decisions could be informed
-by another or a combination of other statistics.
-
-For example, the significance threshold (p \textless{}
+In essence, our current approach aggregates information from across many
+models into a single statistic per variable. Variable selection
+decisions could be informed by another statistic or a combination of
+other statistics. For example, the significance threshold (p \textless{}
 10\textsuperscript{-10}) we put in place was arbitrary and our method
 could be used with a different threshold value, a different metric or a
 combination of different thresholds. For example, variables could be
@@ -773,6 +769,15 @@ nutrition, based on their descriptions. All of this information could
 then be combined with domain knowledge to steer the variable selection
 process.
 
+The types of variables that were ranked highest in our present analysis
+(age, race/ethnicity, smoking and physical activity) are all already
+known to be strongly associated with cancer death. While obtaining an
+unsurprising result serves to confirm the validity of our method, the
+main objective of this work is to provide insight that will lead to the
+identification of new cancer risk factors. To this end, our method will
+have to be refined to detect variables that weakly contribute to cancer
+risk or whose contribution is context-specific.
+
 We demonstrated the ability of our method to generate models that
 predict lethal cancer risk in the NHANES III dataset with high accuracy
 (\(concordance \geq 84\)). It remains to be seen, whether our approach
@@ -781,11 +786,11 @@ does not include cancer-type-specific mortality data, but other studies,
 such as the Atherosclerosis Risk in Communities study (ARIC) {[}6, 8{]},
 may provide the opportunity to generate and assess models that predict
 mortality or incidence of a specific type of cancer. As a continuation
-of this project, we expand the methods described here into a general
-methodology that can be applied beyond NHANES III to other large,
-high-dimensional cohort studies. In addition to generalization to other
-studies, future work on this project will include the creation of a
-software package that encapsulates all of the relevant code and a
+of this project, we will expand the methods described here into a
+general methodology that can be applied beyond NHANES III to other
+large, high-dimensional cohort studies. In addition to generalization to
+other studies, future work on this project will include the creation of
+a software package that encapsulates all of the relevant code and a
 graphical user interface that facilitates data exploration, model
 parameter modification and variable selection.
 
@@ -880,7 +885,7 @@ Extending the Cox model. New York: Springer; 2000.
 
 \leavevmode\hypertarget{ref-Kluyver_2016}{}%
 12. Kluyver T, Ragan-Kelley B, Pérez F, Granger BE, Bussonnier M,
-Frederic J, et al. Jupyter notebooks-a publishing format for
+Frederic J, et al. Jupyter notebooks - A publishing format for
 reproducible computational workflows. In: ELPUB. 2016. pp. 87--90.
 
 \leavevmode\hypertarget{ref-Perez_2007}{}%
