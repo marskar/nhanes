@@ -71,8 +71,8 @@
 % Syntax highlighting #22
 
 % To pass between YAML and LaTeX the dollar signs are added by CII
-\title{Exploratory Analysis of Factors Associated with Cancer Mortality in the
-National Health and Nutrition Examination Survey Dataset}
+\title{Exploratory Analysis of Factors Associated with Cancer Mortality\\
+in the National Health and Nutrition Examination Survey Dataset}
 \author{Martin Skarzynski}
 % The month and year that you submit your FINAL draft TO THE LIBRARY (May or December)
 \date{May 2, 2018}
@@ -140,26 +140,25 @@ exposures in relation to a given outcome.
 
 \textbf{Objective:} To explore the exposures measured in the Third
 National Health and Nutrition Examination Survey (NHANES III) dataset in
-search of factors associated with cancer mortality data obtained from
-the National Death Index (NDI) and to assess methods for lethal cancer
-risk prediction model variable selection.
+search of factors associated with cancer mortality and to assess methods
+for lethal cancer risk prediction model variable selection.
 
 \textbf{Methods:} We fit thousands of Cox proportional hazards models
 with and without ridge penalties to randomly selected subsets of up to
-50 variables. We analyzed the descriptions of NHANES variables provided
-by NCHS and selected 3 variables that are important, non-modifiable risk
-factors for cancer (age, sex and race/ethnicity) to include in all
-future models. We then compared variables that appeared most frequently
-in the Cox models with high significance (p \textless{}
-10\textsuperscript{-10}) and selected 5 high-frequency, highly
-significant variables that we used to train a new group of models with
-fewer randomized variables.
+50 variables. We analyzed the descriptions of NHANES III variables
+provided by the National Center for Health Statistics (NCHS) and
+selected 3 variables known to be related to cancer risk (age, sex and
+race/ethnicity) to include in all future models. We then compared highly
+significant variables (p \textless{} 10\textsuperscript{-10}) that
+appeared most frequently in the Cox models and selected 5 high-frequency
+highly significant variables that we used to train a new group of models
+with fewer randomized variables.
 
-\textbf{Results:} The models with selected variables outperformed the
-fully randomized models in terms of concordance. Across all of the
-models, the ten variables that most frequently surpassed the p-value
-threshold were age, race/ethnicity, lifetime consumption of more than
-100 cigarettes, 3 variables that pertain to physical activity and 3
+\textbf{Results:} The models with fewer randomized variables
+outperformed the fully randomized models in terms of concordance. Across
+all of the models, the ten variables that most frequently surpassed the
+p-value threshold were age, race/ethnicity, lifetime consumption of more
+than 100 cigarettes, 3 variables that pertain to physical activity and 3
 variables that may be related to aging.
 
 \textbf{Conclusions:} The work described here constitutes an exploratory
@@ -213,26 +212,25 @@ and mortality.
     
     \textbf{Objective:} To explore the exposures measured in the Third
     National Health and Nutrition Examination Survey (NHANES III) dataset in
-    search of factors associated with cancer mortality data obtained from
-    the National Death Index (NDI) and to assess methods for lethal cancer
-    risk prediction model variable selection.
+    search of factors associated with cancer mortality and to assess methods
+    for lethal cancer risk prediction model variable selection.
     
     \textbf{Methods:} We fit thousands of Cox proportional hazards models
     with and without ridge penalties to randomly selected subsets of up to
-    50 variables. We analyzed the descriptions of NHANES variables provided
-    by NCHS and selected 3 variables that are important, non-modifiable risk
-    factors for cancer (age, sex and race/ethnicity) to include in all
-    future models. We then compared variables that appeared most frequently
-    in the Cox models with high significance (p \textless{}
-    10\textsuperscript{-10}) and selected 5 high-frequency, highly
-    significant variables that we used to train a new group of models with
-    fewer randomized variables.
+    50 variables. We analyzed the descriptions of NHANES III variables
+    provided by the National Center for Health Statistics (NCHS) and
+    selected 3 variables known to be related to cancer risk (age, sex and
+    race/ethnicity) to include in all future models. We then compared highly
+    significant variables (p \textless{} 10\textsuperscript{-10}) that
+    appeared most frequently in the Cox models and selected 5 high-frequency
+    highly significant variables that we used to train a new group of models
+    with fewer randomized variables.
     
-    \textbf{Results:} The models with selected variables outperformed the
-    fully randomized models in terms of concordance. Across all of the
-    models, the ten variables that most frequently surpassed the p-value
-    threshold were age, race/ethnicity, lifetime consumption of more than
-    100 cigarettes, 3 variables that pertain to physical activity and 3
+    \textbf{Results:} The models with fewer randomized variables
+    outperformed the fully randomized models in terms of concordance. Across
+    all of the models, the ten variables that most frequently surpassed the
+    p-value threshold were age, race/ethnicity, lifetime consumption of more
+    than 100 cigarettes, 3 variables that pertain to physical activity and 3
     variables that may be related to aging.
     
     \textbf{Conclusions:} The work described here constitutes an exploratory
@@ -254,7 +252,7 @@ and mortality.
 
 Cancer susceptibility is influenced by modifiable and non-modifiable
 factors. Modifiable cancer risk factors include body mass index (BMI)
-and cigarette use, whereas the non-modifiable factors include age, sex,
+and cigarette use, whereas non-modifiable factors include age, sex,
 race/ethnicity, single nucleotide polymorphisms (SNPs), and family
 history of disease. According to a 2018 study by Islami and colleagues
 {[}1{]}, modifiable risk factors are responsible for 42\% of all cancer
@@ -276,12 +274,11 @@ Cancer risk prediction models can help policymakers and cancer
 prevention practitioners develop more effective interventions and to
 channel limited resources towards people at the greatest risk. To
 achieve the best performance, cancer risk prediction models must include
-both modifiable and non-modifiable risk factors. In 2016, Maas and
-colleagues {[}3{]} demonstrated that cancer risk prediction models based
-on known epidemiologic risk factors can be improved when genetic
-information such as SNPs are included in the models. Importantly, the
-combined model provided better risk stratification than the models
-containing only epidemiologic risk factors or only genetic variables.
+both modifiable and non-modifiable risk factors. For example, a 2016
+study by Maas and colleagues {[}3{]} demonstrated that cancer risk
+prediction models based on known epidemiologic risk factors can provide
+better risk stratification when genetic information such as SNPs are
+included.
 
 The challenge of cancer risk prediction is complex and will require
 cancer-type specific strategies that integrate multiple types of data
@@ -312,23 +309,20 @@ National Health and Nutrition Examination Survey (NHANES III)} {[}5{]}
 and the accompanying
 \href{https://www.cdc.gov/nchs/data-linkage/mortality-public.htm}{National
 Death Index (NDI) Public-Use Linked Mortality Files}. The first goal of
-the analysis was to explore the available NHANES III data and identify
+our analysis was to explore the available NHANES III data and identify
 potential variables of interest for cancer mortality risk prediction.
 The second goal was to define an approach for variable selection for
-cancer risk prediction models. NHANES III is different from many other
-studies, in that instead of randomly sampling, NHANES utilizes a complex
-design that employs probability-based sampling in multiple stages
-{[}5{]}.
+cancer risk prediction models.
 
 While the current work focuses solely on NHANES III, the data
 exploration and variable selection methods described here can
-potentially be applied to other studies, even those that have different
-designs. For example, the Atherosclerosis Risk in Communities (ARIC)
-study {[}6{]} and the Framingham Heart Study (FHS) {[}7{]} are, like
-NHANES, large cohort studies that do not focus on cancer, but include
-relevant cancer outcomes as part of rich, multidimensional datasets. In
-fact, the ARIC {[}8{]}, NHANES {[}9{]}, and FHS {[}10{]} datasets have
-already proven useful for cancer research.
+potentially be applied to other studies. For example, the
+Atherosclerosis Risk in Communities (ARIC) study {[}6{]} and the
+Framingham Heart Study (FHS) {[}7{]} are, like NHANES, large cohort
+studies that do not focus on cancer, but include relevant cancer
+outcomes as part of rich, multidimensional datasets. In fact, the ARIC
+{[}8{]}, NHANES {[}9{]}, and FHS {[}10{]} datasets have already proven
+useful for cancer research.
 
 \hypertarget{methods}{%
 \section*{Methods}\label{methods}}
@@ -341,22 +335,22 @@ Examination, and Laboratory components, were collected and linked with
 Mortality data from NDI death certificate records by the National Center
 for Health Statistics (NCHS) of the Centers for Disease Control and
 Prevention (CDC). From the initial pool of participants, we selected
-16404 adult (\(age \geq 18\)) participants who were cancer-free at
+16,404 adult (\(age \geq 18\)) participants who were cancer-free at
 baseline and who had no missing values for follow-up time since
 interview, NDI mortality, primary sampling units (PSU), stratification,
 and sampling weight variables.
 
-The initial publicly available dataset contained 3544 exposures from the
-Interview, Medical Examination, Laboratory, and Mortality components.
-After removing variables that were non-numeric, missing any values, only
-had one unique value, or had correlation to another variable greater
-than 0.9, we obtained the final set of 243 exposures. The analysis
-described here did not involve multiple imputation nor utilize the
-NHANES III Multiply Imputed Data Set. Among the 16404 participants,
-there were 964 cancer deaths and 280891 total years of follow-up since
-the initial Interview data were collected. The cancer deaths and
-follow-up time were used as the outcome (survival) in Cox proportional
-hazards regression analysis {[}11{]}.
+The initial publicly available dataset contained 3,544 exposures from
+the Interview, Medical Examination, Laboratory, and Mortality
+components. After removing variables that were non-numeric, missing any
+values, only had one unique value, or had correlation to another
+variable greater than 0.9, we obtained the final set of 243 exposures.
+The analysis described here did not involve multiple imputation nor
+utilize the NHANES III Multiply Imputed Data Set. Among the 16,404
+participants, there were 964 cancer deaths and 280,891 total years of
+follow-up since the initial Interview data were collected. The cancer
+death and follow-up time variables were used as the outcome (survival)
+in Cox proportional hazards regression analysis {[}11{]}.
 
 NHANES III data and documentation are available on the
 \href{https://wwwn.cdc.gov/nchs/nhanes/nhanes3/DataFiles.aspx}{Centers
@@ -404,19 +398,22 @@ variable (such as the age in months, \texttt{HSAITMOR}). To create the
 final processed dataset, we also removed highly correlated variables
 (\(r \geq 0.9\)) using the \texttt{caret} R package.
 
-Methods to analyze complex survey data using SAS, SPSS, STATA, SUDAAN,
-{[}22{]} and R {[}23, 24{]} software have been described. From the final
-dataset, we randomly selected 1 to 50 predictor variables and trained
-Cox proportional hazards models with the \texttt{survey} R package
-{[}23, 24{]}, which allows for the analysis of complex survey design
-data using R {[}25{]}. In half of the models, we applied ridge penalties
-{[}26{]} to the predictors variables using the \texttt{survival} R
-Package {[}11, 27{]}. In addition to the predictor variables, the models
-also included 1) a ``survival object'' {[}11, 27{]} created from the
-event (cancer mortality) and follow-up time variables and 2) a ``design
-object'' {[}24{]} created from the Primary Sampling Unit
-(\texttt{SDDPSU6}), Stratification (\texttt{SDSTRA6}) and Weight
-(\texttt{WTPFQX6}) NHANES sampling variables\footnote{The
+NHANES III is different from many other studies, in that instead of
+randomly sampling, NHANES utilizes a complex design that employs
+probability-based sampling in multiple stages {[}5{]}. Methods to
+analyze complex survey data using SAS, SPSS, STATA, SUDAAN, {[}22{]} and
+R {[}23, 24{]} software have been described. From the final dataset, we
+randomly selected 1 to 50 predictor variables and trained Cox
+proportional hazards models with the \texttt{survey} R package {[}23,
+24{]}, which allows for the analysis of complex survey design data using
+R {[}25{]}. In half of the models, we applied ridge penalties {[}26{]}
+to the predictors variables using the \texttt{survival} R Package {[}11,
+27{]}. In addition to the predictor variables, the models also included
+1) a ``survival object'' {[}11, 27{]} created from the event (cancer
+mortality) and follow-up time variables and 2) a ``design object''
+{[}24{]} created from the Primary Sampling Unit (\texttt{SDDPSU6}),
+Stratification (\texttt{SDSTRA6}) and Weight (\texttt{WTPFQX6}) NHANES
+sampling variables\footnote{The
   \href{https://www.cdc.gov/nchs/tutorials/NHANES/SurveyDesign/SampleDesign/intro_iii.htm}{National
   Center for Health Statistics (NCHS)} recommends the application of the
   provided sampling design variables and sampling weights in all NHANES
@@ -503,7 +500,7 @@ purple). All Group 3 models have concordance values of 84 or higher
 (black horizontal line).}
 \end{figure}
 The addition of a metric like AIC is important, because it serves to
-provide a balance of goodness-of-fit and model complexity. Concordance,
+provide a balance of goodness-of-fit and model simplicity. Concordance,
 unlike AIC, does not take into account the complexity of a model. As
 follows, larger models tended to have higher concordance values, but
 also higher AIC values. We applied ridge penalties {[}26{]}, also known
@@ -801,17 +798,16 @@ My Master of Public Health (MPH) experience at Johns Hopkins has been
 absolutely transformative. Though I started my MPH studies with a strong
 background in science, I had no experience with public health or
 population science. Similarly, while I was comfortable with R
-programming, I did not know the first thing about survey data, let along
+programming, I did not know the first thing about survey data, let alone
 how to conduct complex survey analyses in R. In my Goals Analysis Plan,
 I outlined my goal of broadening my horizons in three areas: 1)
 substantive expertise (domain knowledge), 2) statistics and mathematics,
 and 3) technical (programming) skills {[}44{]}. Looking back on the
 progress I made during my MPH studies, I am confident that I have
-achieved my goals. This NHANES III Research Report Capstone Project is
-testament to the skills I honed and the knowledge I gained over the past
-year and also perfectly aligns with my interests. I look forward to
-building upon this Capstone as I continue my career in cancer prevention
-research.
+achieved my goals. This Research Report Capstone Project is testament to
+the skills I honed and the knowledge I gained over the past year. I look
+forward to building upon this Capstone as I continue my career in cancer
+prevention research.
 
 \hypertarget{references}{%
 \section*{References}\label{references}}
@@ -939,6 +935,7 @@ Software. 2004;9:1--19.
 
 \leavevmode\hypertarget{ref-survey_2017}{}%
 24. Lumley T. Survey: Analysis of complex survey samples. 2017.
+\url{https://CRAN.R-project.org/package=survey}.
 
 \leavevmode\hypertarget{ref-Lumley_2011}{}%
 25. Lumley T. Complex surveys: A guide to analysis using R. John Wiley

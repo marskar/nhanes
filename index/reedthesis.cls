@@ -304,13 +304,13 @@
     \centerline{\hbox to \wd0 {\hbox{}\hrulefill\hbox{}}}
     \vfil
     A Capstone Project \\
-    Presented to \\
+    Presented to the \\
     \@institution \\ \@division 
     \vfil
     \centerline{\hbox to \wd0 {\hbox{}\hrulefill\hbox{}}}
     \vfil
-    In Partial Fulfillment \\
-    of the Requirements for the Degree of \\
+    In Partial Fulfillment of the \\
+    Requirements for the Degree of \\
     \@degree
     \vfil
     \centerline{\hbox to \wd0 {\hbox{}\hrulefill\hbox{}}}
