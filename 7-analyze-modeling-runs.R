@@ -114,7 +114,8 @@ scale_shape(solid = FALSE) +
                                   "darkviolet",
                                   "darkorange",
                                   "red")) +
-    scale_size(breaks = c(50, 25, 10, 5, 1))
+    scale_size(breaks = c(50, 25, 10, 5, 1))  %>%
+    ggplot
 
 ggsave(here("img/1-quad-final.pdf"))
 ggsave(here("img/1-quad-final300dpi.png"))

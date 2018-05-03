@@ -1,0 +1,49 @@
+---
+title: Lethal Cancer Risk Factors in NHANES
+subtitle: Multidimensional Analysis of <br> Potential Cancer Mortality Risk Factors in the <br> National Health and Nutrition Examination Survey
+author:
+- Martin Skarzynski
+- "Capstone Advisor: Professor Elizabeth Platz"
+date: "`r Sys.Date()`"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE,
+               warning = FALSE, message = FALSE)
+```
+
+```{r libs}
+library(readr)
+library(here)
+library(plotly)
+library(knitr)
+```
+
+# Explore data from the Third National Health and Nutrition Examination Survey (NHANES III)
+
+<center>
+```{r plot1}
+plt1 <- read_rds(path = here("plotlyFig1.rds"))
+plt1
+```
+</center>
+
+# Analyze variables in the context of a significance threshold (p < 10^-10^)
+
+<center>
+```{r plot2}
+plt2 <- read_rds(path = here("volc.rds"))
+plt2
+```
+</center>
+
+# Rank the most frequent highly significant variables
+
+<center>
+```{r plot3}
+plt3 <- read_rds(path = here("plotlyFig3.rds"))
+```
+</center>
+
+

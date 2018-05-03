@@ -1,0 +1,318 @@
+#' ---
+#' title: "Analyze Complete Cases Models"
+#' author: "Martin Skarzynski"
+#' date: "`r Sys.Date()`"
+#' ---
+
+library(readr)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(forcats)
+library(plotly)
+#library(Cairo)
+#devtools::install_github('hadley/ggplot2')
+
+#read in datasets created by scripts 4 & 6
+dat_quad1 <- read_rds("dat/6-model-diff-sizes.rds")
+dat_quad2 <- read_rds("dat/4-model-first-run.rds")
+dat_quad3 <- read_rds("dat/5-model-second-run.rds")
+dat_quad4 <- read_rds("dat/6-model-third-run.rds")
+
+dat_quad1 <-    dat_quad1 %>%
+    rename(con=concordance,
+           n_vars=size,
+           hr_ci_upper = HR_CI_upper,
+           hr_ci_lower = HR_CI_lower) %>%
+    mutate(run = rep(1, nrow(.)),
+           quad = case_when(con > median(con) &
+                            aic <= median(aic) ~ 1,
+                            con > median(con) &
+                            aic > median(aic) ~ 2,
+                            con <= median(con) &
+                            aic <= median(aic) ~ 3,
+                            con <= median(con) &
+                            aic > median(aic) ~ 4
+                           )
+          )
+
+dat_quad2 <-    dat_quad2 %>%
+    drop_na() %>%
+    rename(con=concordance) %>%
+    mutate(type = str_replace(type, "cox", "coxph"),
+           type = str_replace(type, "rid", "ridge"),
+           run = rep(1, nrow(.)),
+           quad = case_when(con > median(con) &
+                            aic <= median(aic) ~ 1,
+                            con > median(con) &
+                            aic > median(aic) ~ 2,
+                            con <= median(con) &
+                            aic <= median(aic) ~ 3,
+                            con <= median(con) &
+                            aic > median(aic) ~ 4
+                           )
+          )
+
+dat_quad3 <-    dat_quad3 %>%
+    drop_na() %>%
+    rename(con=concordance) %>%
+    mutate(type = str_replace(type, "cox", "coxph"),
+           type = str_replace(type, "rid", "ridge"),
+           run = rep(2, nrow(.)),
+           quad = rep(5, nrow(.)))
+
+dat_quad4 <-    dat_quad4 %>%
+    drop_na() %>%
+    rename(con=concordance) %>%
+    mutate(type = str_replace(type, "cox", "coxph"),
+           type = str_replace(type, "rid", "ridge"),
+           run = rep(3, nrow(.)),
+           quad = rep(6, nrow(.)))
+
+dat_quad <- bind_rows(dat_quad1,
+                      dat_quad2,
+                      dat_quad3,
+                      dat_quad4) %>%
+    mutate(quad = as.factor(quad)) %>%
+    mutate(quad = fct_recode(quad,
+                             "1A" = '1',
+                             "1B" = '2',
+                             "1C" = '3',
+                             "1D" = '4',
+                             "2" = '5',
+                             "3" = '6'))
+
+#dat_quad <- dat_quad %>%
+#    mutate(quadrun = interaction(quad, run))
+glimpse(dat_quad)
+
+# Figure 1
+dq <- dat_quad %>%
+    mutate(type = str_replace(type, "coxph", "Cox"),
+           type = str_replace(type, "ridge", "Ridge")) %>%
+    ggplot(aes(x = aic,
+               y = con,
+               size = n_vars,
+               colour = quad)) +
+geom_point(aes(shape = factor(type)),
+           alpha = 0.75,
+           stroke = 1) +
+scale_shape(solid = FALSE) +
+           theme_minimal() +
+           labs(
+                x = 'Akaike Information Criterion',
+                y = 'Concordance'
+                #size = "Model Size",
+                #shape = "Model Type",
+                #colour = "Group"
+                ) +
+    geom_hline(yintercept = 83.5) +
+    scale_color_manual(breaks = c("3", "2",
+                                  "1A","1B",
+                                  "1C","1D"),
+                       values = c("forestgreen",
+                                  "darkturquoise",
+                                  "blue",
+                                  "darkviolet",
+                                  "darkorange",
+                                  "red")) +
+    scale_size(breaks = c(50, 25, 10, 5, 1))
+pltly1 <- ggplotly(dq)
+write_rds(pltly1, path = here("plotlyFig1.rds"))
+plt1 <- read_rds(path = here("plotlyFig1.rds"))
+plt1
+
+# Unpack names using one of the list columns
+namevec <- names(unlist(dat_quad$hr_ci_lower))
+
+df_coef <- dat_quad %>%
+    unnest() %>%
+    mutate(name = namevec) %>%
+    filter(n_vars > 1)
+
+#remove ridge from variable name
+df_coef$name <- gsub("ridge\\(|\\)", "", df_coef$name)
+nrow(df_coef)
+# Figure 2
+dc <- df_coef %>%
+    filter(!between(hazard_ratio, .99, 1.01),
+           name!="HSAITMOR",
+           name!="age_strat",
+           name!="age_strat2",
+           name!="age_strat3",
+           name!="age_strat4",
+           name!="HAJ0",
+           name!="HAA3",
+           name!="HAG1",
+           name!="HAQ7",
+           name!="HAN9",
+           name!="",
+           name!="HAT29",
+           name!="DMPSTAT",
+           name!="WTPXRP2") %>%
+    mutate(type = str_replace(type, "coxph", "Cox"),
+           type = str_replace(type, "ridge", "Ridge")) %>%
+    mutate(coef_pvalue = if_else(near(coef_pvalue, 0),
+                                 coef_pvalue+0.1^17,
+                                 coef_pvalue)) %>%
+    ggplot(aes(x = log2(hazard_ratio),
+               y = -log10(coef_pvalue),
+               colour = quad,
+               shape=type)) +
+           labs(colour = "Group",
+                x = 'log2 Hazard Ratio',
+                y = '-log10 p-value',
+                shape = "Model Type"
+                ) +
+           geom_point(alpha = 0.5,
+                      size = 1,
+                      stroke = 1) +
+           guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+           geom_text(aes(label=name),
+                     alpha = 0.75,
+                     vjust = 1.2,
+                     show.legend = FALSE,
+                     check_overlap = TRUE) +
+           theme_minimal() +
+           theme(plot.margin = margin(t = -15)) +
+           geom_hline(yintercept = 10) +
+           scale_color_manual(breaks = c("3", "2",
+                                         "1A","1B",
+                                         "1C","1D"),
+                              values = c("forestgreen",
+                                         "darkturquoise",
+                                         "blue",
+                                         "darkviolet",
+                                         "darkorange",
+                                         "red"))
+
+write_rds(dc, here("volc.rds"))
+
+pltly2 <- ggplotly(dc)
+pltly2
+write_rds(pltly2, path = here("plotlyFig2.rds"))
+
+ggsave(here("img/2-volcano-final.pdf"))
+ggsave(here("img/2-volcano-final300dpi.png"))
+ggsave(here("img/2-volcano-final200dpi.png"), dpi = 200)
+ggsave(here("img/2-volcano-final100dpi.png"), dpi = 100)
+
+#filter out p-values greater than .1^10
+df_sig <- df_coef %>%
+    filter(coef_pvalue<.1^10)
+
+df_sig %>% glimpse
+#obtain the order by count for name
+ord <- df_sig %>%
+    count(name) %>%
+    arrange(n) %>%
+    filter(n>80) %>%
+    select(name)
+
+#create name factor variable with levels ordered by count
+df_sig$ord_name <- factor(df_sig$name, levels=ord$name)
+
+#df_sig %>%
+#    count(name) %>%
+#    mutate(name = fct_reorder(name, n)) %>%
+#    ggplot(aes(x = name, y = n)) +
+#    geom_col() +
+#    coord_flip()
+
+# Figure 3
+ds <- df_sig %>%
+    drop_na() %>%
+    filter(name!="HSAITMOR",
+           name!="age_strat",
+           name!="age_strat2",
+           name!="age_strat3",
+           name!="age_strat4",
+           name!="HAJ0",
+           name!="HAA3",
+           name!="HAG1",
+           name!="HAQ7",
+           name!="HAN9",
+           name!="",
+           name!="HAT29",
+           name!="DMPSTAT",
+           name!="WTPXRP2") %>%
+    mutate_if(is.integer, as.factor) %>%
+    ggplot(aes(ord_name,fill=quad)) +
+    geom_bar(position = position_stack(reverse = TRUE)) +
+    scale_y_continuous(expand = c(0,0)) +
+    coord_flip() +
+                  theme_minimal() +
+    theme(legend.position = "top") +
+                  labs(fill = "Group",
+                       x = 'Variable Name',
+                       y = 'Count') +
+    scale_fill_manual(breaks = c( "1A","1B",
+                                  "1C","1D",
+                                  "2", "3"),
+                      values = c("forestgreen",
+                                 "darkturquoise",
+                                 "blue",
+                                 "darkviolet",
+                                 "darkorange",
+                                 "red")) #+
+  #theme(plot.margin=unit(c(0,1,0,0),"cm"))
+
+plt3 <- ggplotly(ds)
+
+write_rds(ds, here("varbar.rds"))
+write_rds(plt3, here("plotlyFig3.rds"))
+
+ggsave(here("img/3-varbar-final300dpi.png"))
+ggsave(here("img/3-varbar-final200dpi.png"), dpi = 200)
+ggsave(here("img/3-varbar-final100dpi.png"), dpi = 100)
+ggsave(here("img/3-varbar-final.pdf"))
+
+# Table 1
+df_sig %>%
+    drop_na() %>%
+    filter(name!="HSAITMOR",
+           name!="age_strat",
+           name!="age_strat2",
+           name!="age_strat3",
+           name!="age_strat4",
+           name!="HAJ0",
+           name!="HAA3",
+           name!="HAG1",
+           name!="HAQ7",
+           name!="HAN9",
+           name!="",
+           name!="HAT29",
+           name!="DMPSTAT",
+           name!="WTPXRP2") %>%
+    group_by(quad) %>%
+    rename(Name = name) %>%
+    summarise(n = n()) %>%
+    arrange(desc(n)) %>%
+    knitr::kable()
+
+# Table 2
+df_sig %>%
+    drop_na() %>%
+    filter(name!="HSAITMOR",
+           name!="age_strat",
+           name!="age_strat2",
+           name!="age_strat3",
+           name!="age_strat4",
+           name!="HAJ0",
+           name!="HAA3",
+           name!="HAG1",
+           name!="HAQ7",
+           name!="HAN9",
+           name!="",
+           name!="HAT29",
+           name!="DMPSTAT",
+           name!="WTPXRP2") %>%
+    group_by(name) %>%
+    rename(Name = name) %>%
+    summarise(medianHR = round(median(hazard_ratio), 2),
+              n = n()) %>%
+    arrange(desc(n)) %>%
+    head(n=10) %>%
+    knitr::kable() %>% write_rds(here("table1.rds"))
