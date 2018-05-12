@@ -20,6 +20,14 @@ library(plotly)
 library(knitr)
 ```
 
+# Goal
+1. To explore the exposures measured in the Third National Health and Nutrition Examination Survey (NHANES III) dataset in search of factors associated with cancer mortality and
+2. to assess a variable selection method for cancer risk prediction models.
+
+# Data
+The core data and corresponding documentation are for the survey interview and examination components are found in four separate data files:
+[Lab]
+
 # Explore data from the Third National Health and Nutrition Examination Survey (NHANES III)
 
 <center>
