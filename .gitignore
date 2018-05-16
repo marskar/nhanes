@@ -2,7 +2,7 @@
 *.doc
 *.docx
 *.ppt
-*.pptx
+#*.pptx
 *.xls
 *.xlsx
 # ignore data and literature folders to keep repo size manageable (backed up by Google drive)
